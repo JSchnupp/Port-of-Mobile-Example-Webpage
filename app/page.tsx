@@ -111,7 +111,9 @@ export default function Home() {
   const calculateIndoorPercentage = () => {
     const indoorStatuses = indoorWarehouses
       .flatMap((warehouse) =>
-        [1, 2, 3, 4].map((section) => buttonStatus[`${warehouse}${section}`])
+        Object.keys(buttonStatus)
+          .filter(key => key.startsWith(warehouse))
+          .map(key => buttonStatus[key])
       )
       .filter(Boolean);
     return calculatePercentage(indoorStatuses);
@@ -120,16 +122,18 @@ export default function Home() {
   const calculateOutdoorPercentage = () => {
     const outdoorStatuses = outdoorWarehouses
       .flatMap((warehouse) =>
-        [1, 2, 3, 4].map((section) => buttonStatus[`${warehouse}${section}`])
+        Object.keys(buttonStatus)
+          .filter(key => key.startsWith(warehouse))
+          .map(key => buttonStatus[key])
       )
       .filter(Boolean);
     return calculatePercentage(outdoorStatuses);
   };
 
-  const getWarehouseAverageStatus = (warehouse: string) => {
-    const sections = [1, 2, 3, 4].map(
-      (section) => buttonStatus[`${warehouse}${section}`]
-    );
+  const getWarehouseAverageStatus = (warehouse: string): keyof typeof statusColors => {
+    const sections = Object.keys(buttonStatus)
+      .filter(key => key.startsWith(warehouse))
+      .map(key => buttonStatus[key]);
     const percentage = calculatePercentage(sections);
     if (percentage >= 100) return "red";
     if (percentage >= 50) return "orange";
@@ -221,6 +225,35 @@ export default function Home() {
     // If the deleted warehouse was selected, clear the selection
     if (selectedWarehouse === warehouse) {
       setSelectedWarehouse(null);
+    }
+  };
+
+  const handleAddSection = (warehouse: string) => {
+    const existingSections = Object.keys(buttonStatus)
+      .filter(key => key.startsWith(warehouse))
+      .length;
+    
+    const newSectionNumber = existingSections + 1;
+    const newSectionKey = `${warehouse}${newSectionNumber}`;
+    
+    setButtonStatus(prev => ({
+      ...prev,
+      [newSectionKey]: "green"
+    }));
+  };
+
+  const handleDeleteSection = (warehouse: string) => {
+    const sectionKeys = Object.keys(buttonStatus)
+      .filter(key => key.startsWith(warehouse))
+      .sort((a, b) => b.localeCompare(a)); // Sort in reverse to get the last section
+
+    if (sectionKeys.length > 1) { // Prevent deleting the last section
+      const lastSection = sectionKeys[0];
+      setButtonStatus(prev => {
+        const newStatus = { ...prev };
+        delete newStatus[lastSection];
+        return newStatus;
+      });
     }
   };
 
@@ -322,33 +355,50 @@ export default function Home() {
 
         {selectedWarehouse && (
           <div className="w-full">
-            <h2 className="text-2xl font-bold mb-4 text-center">
-              Warehouse {selectedWarehouse}
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">
+                Warehouse {selectedWarehouse}
+              </h2>
+              <div className="space-x-2">
+                <button
+                  onClick={() => handleAddSection(selectedWarehouse)}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  Add Section
+                </button>
+                <button
+                  onClick={() => handleDeleteSection(selectedWarehouse)}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Delete Section
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              {[1, 2, 3, 4].map((sectionNumber) => {
-                const buttonKey = `${selectedWarehouse}${sectionNumber}`;
-                return (
-                  <button
-                    key={sectionNumber}
-                    onClick={() =>
-                      handleButtonClick(selectedWarehouse, sectionNumber)
-                    }
-                    className={`px-8 py-6 text-white rounded-lg transition-colors text-2xl font-semibold ${
-                      buttonStatus[buttonKey]
-                        ? statusColors[buttonStatus[buttonKey]].color
-                        : "bg-blue-500 hover:bg-blue-600"
-                    }`}
-                  >
-                    Section {String.fromCharCode(64 + sectionNumber)}
-                    {buttonStatus[buttonKey] && (
-                      <span className="ml-2">
-                        ({statusColors[buttonStatus[buttonKey]].percentage})
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+              {Object.keys(buttonStatus)
+                .filter(key => key.startsWith(selectedWarehouse))
+                .sort((a, b) => a.localeCompare(b))
+                .map((buttonKey) => {
+                  const sectionNumber = parseInt(buttonKey.slice(selectedWarehouse.length));
+                  return (
+                    <button
+                      key={buttonKey}
+                      onClick={() => handleButtonClick(selectedWarehouse, sectionNumber)}
+                      className={`px-8 py-6 text-white rounded-lg transition-colors text-2xl font-semibold ${
+                        buttonStatus[buttonKey]
+                          ? statusColors[buttonStatus[buttonKey]].color
+                          : "bg-blue-500 hover:bg-blue-600"
+                      }`}
+                    >
+                      Section {String.fromCharCode(64 + sectionNumber)}
+                      {buttonStatus[buttonKey] && (
+                        <span className="ml-2">
+                          ({statusColors[buttonStatus[buttonKey]].percentage})
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
             </div>
           </div>
         )}
