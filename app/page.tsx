@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { PieChartComponent } from "@/components/ui/pie-chart";
 import { WarehouseForm } from "./components/WarehouseForm";
+import { WarehouseListItem } from "@/components/warehouse/WarehouseListItem";
 
 export default function Home() {
   const [indoorOpen, setIndoorOpen] = useState(false);
@@ -50,8 +51,8 @@ export default function Home() {
     H4: "green",
   });
 
-  const indoorWarehouses = ["A", "B", "C", "D"];
-  const outdoorWarehouses = ["E", "F", "G", "H"];
+  const [indoorWarehouses, setIndoorWarehouses] = useState(["A", "B", "C", "D"]);
+  const [outdoorWarehouses, setOutdoorWarehouses] = useState(["E", "F", "G", "H"]);
   const statusColors = {
     green: { color: "bg-green-500", percentage: "0%" },
     yellow: { color: "bg-yellow-500", percentage: "25%" },
@@ -185,6 +186,28 @@ export default function Home() {
     // 3. Initialize the sections with default status
   };
 
+  const handleDeleteWarehouse = (warehouse: string) => {
+    // Remove the warehouse from the appropriate list
+    const isIndoor = indoorWarehouses.includes(warehouse);
+    if (isIndoor) {
+      setIndoorWarehouses(indoorWarehouses.filter(w => w !== warehouse));
+    } else {
+      setOutdoorWarehouses(outdoorWarehouses.filter(w => w !== warehouse));
+    }
+
+    // Clear the status for all sections of this warehouse
+    const updatedButtonStatus = { ...buttonStatus };
+    [1, 2, 3, 4].forEach(section => {
+      delete updatedButtonStatus[`${warehouse}${section}`];
+    });
+    setButtonStatus(updatedButtonStatus);
+
+    // If the deleted warehouse was selected, clear the selection
+    if (selectedWarehouse === warehouse) {
+      setSelectedWarehouse(null);
+    }
+  };
+
   return (
     <div className="min-h-screen p-8 flex flex-col items-center justify-center">
       <h1 className="text-[32pt] font-[family-name:var(--font-geist-mono)] mb-12 bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent tracking-tight">
@@ -233,18 +256,14 @@ export default function Home() {
             {indoorOpen && (
               <div className="absolute mt-2 w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg">
                 {indoorWarehouses.map((warehouse) => (
-                  <div
+                  <WarehouseListItem
                     key={warehouse}
-                    onClick={() => handleWarehouseClick(warehouse)}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                  >
-                    <div
-                      className={`w-3 h-3 rounded-full ${
-                        statusColors[getWarehouseAverageStatus(warehouse)].color
-                      }`}
-                    />
-                    <span>Warehouse {warehouse}</span>
-                  </div>
+                    warehouse={warehouse}
+                    getWarehouseAverageStatus={getWarehouseAverageStatus}
+                    onWarehouseClick={handleWarehouseClick}
+                    onDeleteWarehouse={handleDeleteWarehouse}
+                    statusColors={statusColors}
+                  />
                 ))}
                 <div
                   className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-t border-gray-200 dark:border-gray-700"
@@ -265,18 +284,14 @@ export default function Home() {
             {outdoorOpen && (
               <div className="absolute mt-2 w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg">
                 {outdoorWarehouses.map((warehouse) => (
-                  <div
+                  <WarehouseListItem
                     key={warehouse}
-                    onClick={() => handleWarehouseClick(warehouse)}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                  >
-                    <div
-                      className={`w-3 h-3 rounded-full ${
-                        statusColors[getWarehouseAverageStatus(warehouse)].color
-                      }`}
-                    />
-                    <span>Warehouse {warehouse}</span>
-                  </div>
+                    warehouse={warehouse}
+                    getWarehouseAverageStatus={getWarehouseAverageStatus}
+                    onWarehouseClick={handleWarehouseClick}
+                    onDeleteWarehouse={handleDeleteWarehouse}
+                    statusColors={statusColors}
+                  />
                 ))}
                 <div
                   className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-t border-gray-200 dark:border-gray-700"
