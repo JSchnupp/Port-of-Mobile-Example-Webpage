@@ -176,14 +176,30 @@ export default function Home() {
   };
 
   const handleWarehouseSubmit = (data: { name: string; sections: number }) => {
-    // Here you would typically handle the form submission
-    // For now, we'll just log the data
-    console.log('New warehouse:', { ...data, type: warehouseType });
-    
-    // You can add logic here to:
-    // 1. Add the new warehouse to your warehouse list
-    // 2. Update the UI to show the new warehouse
-    // 3. Initialize the sections with default status
+    if (!warehouseType) return;
+
+    // Add the new warehouse to the appropriate list
+    if (warehouseType === 'indoor') {
+      setIndoorWarehouses(prev => [...prev, data.name]);
+    } else {
+      setOutdoorWarehouses(prev => [...prev, data.name]);
+    }
+
+    // Initialize all sections of the new warehouse to "green" (0%)
+    const newSections: Record<string, keyof typeof statusColors> = {};
+    for (let i = 1; i <= 4; i++) {
+      newSections[`${data.name}${i}`] = "green"; // green represents 0% utilization
+    }
+
+    // Add the new sections to buttonStatus
+    setButtonStatus(prev => ({
+      ...prev,
+      ...newSections
+    }));
+
+    // Close the form
+    setShowWarehouseForm(false);
+    setWarehouseType(null);
   };
 
   const handleDeleteWarehouse = (warehouse: string) => {
