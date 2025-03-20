@@ -258,12 +258,12 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen p-8 flex flex-col items-center justify-center">
-      <h1 className="text-[32pt] font-[family-name:var(--font-geist-mono)] mb-12 bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent tracking-tight">
-        Port of Mobile Test
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 p-8 flex flex-col items-center">
+      <h1 className="text-[40pt] font-[family-name:var(--font-geist-mono)] mb-12 bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent tracking-tight drop-shadow-lg">
+        Port of Mobile
       </h1>
 
-      <div className="mb-8 w-full max-w-md">
+      <div className="mb-12 w-full max-w-md bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl hover:shadow-cyan-500/10 transition-all duration-300">
         <PieChartComponent
           data={pieChartData}
           title="Port Utilization"
@@ -275,35 +275,35 @@ export default function Home() {
           className="shadow-lg"
           tooltipFormatter={tooltipFormatter}
           footer={
-            <div className="flex justify-around w-full pt-2">
+            <div className="flex justify-around w-full pt-4 border-t border-gray-700/50 mt-4">
               <div className="flex flex-col items-center">
-                <span className="font-semibold text-blue-600 dark:text-blue-400 text-lg">
+                <span className="font-semibold text-blue-400 text-lg">
                   {indoorPercentage}%
                 </span>
-                <span className="text-sm text-muted-foreground">Indoor</span>
+                <span className="text-sm text-gray-400">Indoor</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="font-semibold text-purple-600 dark:text-purple-400 text-lg">
+                <span className="font-semibold text-purple-400 text-lg">
                   {outdoorPercentage}%
                 </span>
-                <span className="text-sm text-muted-foreground">Outdoor</span>
+                <span className="text-sm text-gray-400">Outdoor</span>
               </div>
             </div>
           }
         />
       </div>
 
-      <div className="flex flex-col gap-8 items-center">
-        <div className="flex gap-8">
-          <div className="relative">
+      <div className="flex flex-col gap-8 items-center w-full max-w-4xl">
+        <div className="flex gap-8 justify-center w-full">
+          <div className="relative flex-1 max-w-sm">
             <button
               onClick={() => setIndoorOpen(!indoorOpen)}
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-[family-name:var(--font-geist-sans)] text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-[family-name:var(--font-geist-sans)] text-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 hover:scale-105 border border-blue-400/20"
             >
               Indoor Warehouse
             </button>
             {indoorOpen && (
-              <div className="absolute mt-2 w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+              <div className="absolute mt-4 w-full bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-blue-500/20 overflow-hidden z-50">
                 {indoorWarehouses.map((warehouse) => (
                   <WarehouseListItem
                     key={warehouse}
@@ -315,23 +315,24 @@ export default function Home() {
                   />
                 ))}
                 <div
-                  className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-t border-gray-200 dark:border-gray-700"
+                  className="flex items-center justify-between px-4 py-3 hover:bg-blue-500/10 cursor-pointer border-t border-blue-500/20 transition-colors"
                   onClick={() => handleCreateWarehouse('indoor')}
                 >
-                  <span className="text-blue-500">+ Create Warehouse</span>
+                  <span className="text-blue-400 font-medium">+ Create Warehouse</span>
                 </div>
               </div>
             )}
           </div>
-          <div className="relative">
+
+          <div className="relative flex-1 max-w-sm">
             <button
               onClick={() => setOutdoorOpen(!outdoorOpen)}
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-400 text-white font-[family-name:var(--font-geist-sans)] text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-500 text-white font-[family-name:var(--font-geist-sans)] text-lg shadow-lg hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 border border-purple-400/20"
             >
               Outdoor Warehouse
             </button>
             {outdoorOpen && (
-              <div className="absolute mt-2 w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+              <div className="absolute mt-4 w-full bg-gray-800/95 backdrop-blur-sm rounded-xl shadow-2xl border border-purple-500/20 overflow-hidden z-50">
                 {outdoorWarehouses.map((warehouse) => (
                   <WarehouseListItem
                     key={warehouse}
@@ -343,10 +344,10 @@ export default function Home() {
                   />
                 ))}
                 <div
-                  className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-t border-gray-200 dark:border-gray-700"
+                  className="flex items-center justify-between px-4 py-3 hover:bg-purple-500/10 cursor-pointer border-t border-purple-500/20 transition-colors"
                   onClick={() => handleCreateWarehouse('outdoor')}
                 >
-                  <span className="text-purple-500">+ Create Warehouse</span>
+                  <span className="text-purple-400 font-medium">+ Create Warehouse</span>
                 </div>
               </div>
             )}
@@ -354,21 +355,21 @@ export default function Home() {
         </div>
 
         {selectedWarehouse && (
-          <div className="w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">
+          <div className="w-full bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700/50 shadow-xl">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 Warehouse {selectedWarehouse}
               </h2>
-              <div className="space-x-2">
+              <div className="space-x-3">
                 <button
                   onClick={() => handleAddSection(selectedWarehouse)}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 border border-green-400/20"
                 >
                   Add Section
                 </button>
                 <button
                   onClick={() => handleDeleteSection(selectedWarehouse)}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  className="px-4 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-lg hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300 border border-red-400/20"
                 >
                   Delete Section
                 </button>
@@ -384,18 +385,20 @@ export default function Home() {
                     <button
                       key={buttonKey}
                       onClick={() => handleButtonClick(selectedWarehouse, sectionNumber)}
-                      className={`px-8 py-6 text-white rounded-lg transition-colors text-2xl font-semibold ${
+                      className={`px-8 py-6 rounded-xl transition-all duration-300 text-2xl font-semibold backdrop-blur-sm border ${
                         buttonStatus[buttonKey]
-                          ? statusColors[buttonStatus[buttonKey]].color
-                          : "bg-blue-500 hover:bg-blue-600"
-                      }`}
+                          ? `${statusColors[buttonStatus[buttonKey]].color} border-${statusColors[buttonStatus[buttonKey]].color.split('-')[1]}-400/20`
+                          : "bg-blue-500 hover:bg-blue-600 border-blue-400/20"
+                      } hover:shadow-lg hover:scale-[1.02]`}
                     >
-                      Section {String.fromCharCode(64 + sectionNumber)}
-                      {buttonStatus[buttonKey] && (
-                        <span className="ml-2">
-                          ({statusColors[buttonStatus[buttonKey]].percentage})
-                        </span>
-                      )}
+                      <div className="flex flex-col items-center space-y-2">
+                        <span>Section {String.fromCharCode(64 + sectionNumber)}</span>
+                        {buttonStatus[buttonKey] && (
+                          <span className="text-sm font-normal">
+                            {statusColors[buttonStatus[buttonKey]].percentage} Utilization
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -404,9 +407,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* Warehouse Form Modal */}
       {showWarehouseForm && warehouseType && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
           <WarehouseForm
             type={warehouseType}
             onClose={() => setShowWarehouseForm(false)}
