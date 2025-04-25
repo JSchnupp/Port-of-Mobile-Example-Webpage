@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '../utils/supabase/client'
 import type { Warehouse, WarehouseStatus, WarehouseType } from '../../types/database'

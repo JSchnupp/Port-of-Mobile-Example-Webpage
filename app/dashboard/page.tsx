@@ -1,18 +1,57 @@
+'use client';
+
 import Link from 'next/link';
 import { WarehouseDashboard } from "../components/WarehouseDashboard";
-
-// Mock data for demonstration
-const mockStats = {
-  totalSections: 100,
-  occupiedSections: 75,
-  availableSections: 25,
-  statusBreakdown: {
-    green: 60,
-    red: 15,
-  },
-};
+import { useWarehouses } from "../hooks/useWarehouses";
+import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage } from "../utils/warehouse-utils";
 
 export default function DashboardPage() {
+  const { indoorWarehouses, outdoorWarehouses, buttonStatus } = useWarehouses();
+
+  // Calculate actual utilization stats
+  const totalSections = Object.keys(buttonStatus).length;
+  const occupiedSections = Object.values(buttonStatus).filter(status => status === 'green').length;
+  const availableSections = totalSections - occupiedSections;
+
+  // Calculate percentages
+  const totalPercentage = calculateTotalPercentage(buttonStatus);
+  const indoorPercentage = calculateIndoorPercentage(buttonStatus, indoorWarehouses.map(w => w.letter));
+  const outdoorPercentage = calculateOutdoorPercentage(buttonStatus, outdoorWarehouses.map(w => w.letter));
+
+  // Generate fake historical data for the past 7 days
+  const generateHistoricalData = () => {
+    const data = [];
+    const today = new Date();
+    
+    // Generate data for the past 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      
+      // Generate a random variation around the current utilization
+      const variation = (Math.random() - 0.5) * 20; // ±10% variation
+      const historicalUtilization = Math.max(0, Math.min(100, totalPercentage + variation));
+      
+      data.push({
+        date: date.toISOString(),
+        utilization: historicalUtilization
+      });
+    }
+    
+    return data;
+  };
+
+  const stats = {
+    totalSections,
+    occupiedSections,
+    availableSections,
+    statusBreakdown: {
+      green: occupiedSections,
+      red: availableSections,
+    },
+    historicalData: generateHistoricalData()
+  };
+
   return (
     <div className="container mx-auto p-4">
       {/* Back button */}
@@ -38,8 +77,8 @@ export default function DashboardPage() {
       </div>
 
       <WarehouseDashboard 
-        stats={mockStats}
-        currentWarehouse="Main Warehouse"
+        stats={stats}
+        currentWarehouse="All Warehouses"
       />
     </div>
   );

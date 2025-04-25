@@ -2,12 +2,12 @@
 
 /** @jsxImportSource react */
 import React, { useState, useEffect, useRef } from 'react';
-import { DndProvider } from 'react-dnd';
-import { useDrag, useDrop } from 'react-dnd';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
 import { statusColors } from '../utils/warehouse-utils';
 import type { WarehouseStatus } from '../../types/database';
+import type { DragSourceMonitor, DropTargetMonitor } from 'react-dnd';
 
 // Constants for grid dimensions
 const gridWidth = 6;  // Total width including aisle
@@ -63,22 +63,37 @@ interface DropZoneProps {
   isOccupied: boolean;
 }
 
+const isValidColumn = (x: number) => {
+  // Allow positions in first two columns (0,1) or last two columns (3,4)
+  return (x >= 0 && x <= 1) || (x >= 3 && x <= 4);
+};
+
 const DropZone: React.FC<DropZoneProps> = ({ x, y, onDrop, gridSize, isOccupied }) => {
   const ref = useRef<HTMLDivElement>(null);
   
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: 'section',
-    canDrop: () => !isOccupied,
+    canDrop: (item: { id: string }) => {
+      // Don't allow dropping in the aisle column
+      if (x === 2) {
+        return false;
+      }
+      // Don't allow dropping on occupied spaces
+      if (isOccupied) {
+        return false;
+      }
+      return true;
+    },
     drop: (item: { id: string }) => {
       if (item && item.id) {
         onDrop(item.id, { x, y });
       }
     },
-    collect: monitor => ({
+    collect: (monitor: DropTargetMonitor) => ({
       isOver: !!monitor.isOver(),
       canDrop: !!monitor.canDrop()
     })
-  }), [x, y, isOccupied]);
+  }), [x, y, isOccupied, onDrop]);
 
   useEffect(() => {
     if (ref.current) {
@@ -94,11 +109,13 @@ const DropZone: React.FC<DropZoneProps> = ({ x, y, onDrop, gridSize, isOccupied 
         width: `${gridSize}px`,
         height: `${gridSize}px`,
         position: 'absolute',
-        pointerEvents: 'all'
+        pointerEvents: 'all',
+        zIndex: 1,
+        transition: 'background-color 0.2s ease'
       }}
       className={`rounded-xl transition-colors duration-200 ${
-        isOver && canDrop ? 'bg-gray-100/10' : 
-        canDrop ? 'bg-gray-100/5' : ''
+        isOver && canDrop ? 'bg-gray-100/20' : 
+        canDrop ? 'bg-gray-100/10' : ''
       }`}
     />
   );
@@ -119,23 +136,22 @@ const DraggableSection: React.FC<DraggableSectionProps> = ({
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   
-  const [{ isDragging }, drag] = useDrag({
+  const [{ isDragging }, drag] = useDrag(() => ({
     type: 'section',
-    item: {
-      id: section.id,
-      type: 'section',
-      currentPosition: section.position
-    },
-    collect: monitor => ({
+    item: { id: section.id },
+    collect: (monitor: DragSourceMonitor) => ({
       isDragging: !!monitor.isDragging()
     })
-  });
+  }), [section.id]);
 
-  // Connect the drag ref
-  drag(ref);
+  useEffect(() => {
+    if (ref.current) {
+      drag(ref);
+    }
+  }, [drag]);
 
   const sectionSize = gridSize - 6;
-  const xPosition = section.position.x < middleColumnIndex
+  const xPosition = section.position.x < 2
     ? section.position.x * (gridSize + columnGap)
     : (section.position.x - 1) * (gridSize + columnGap) + aisleWidth + gridSize;
   
@@ -153,7 +169,8 @@ const DraggableSection: React.FC<DraggableSectionProps> = ({
         height: `${sectionSize}px`,
         opacity: isDragging ? 0.7 : 1,
         transform: isDragging ? 'scale(1.05)' : 'scale(1)',
-        pointerEvents: 'all'
+        pointerEvents: 'all',
+        transition: isDragging ? 'none' : 'all 0.3s ease'
       }}
     >
       <button
@@ -218,17 +235,15 @@ const findNextAvailablePosition = (
     sectionStates.map(section => `${section.position.x},${section.position.y}`)
   );
 
-  // First try left side (columns 0 and 1)
+  // First, check for any unused spaces in existing rows
   for (let y = 0; y < gridHeight; y++) {
+    // Check left side (columns 0 and 1)
     for (let x = 0; x <= 1; x++) {
       if (!occupiedPositions.has(`${x},${y}`)) {
         return { x, y };
       }
     }
-  }
-
-  // Then try right side (columns 3 and 4)
-  for (let y = 0; y < gridHeight; y++) {
+    // Check right side (columns 3 and 4)
     for (let x = 3; x <= 4; x++) {
       if (!occupiedPositions.has(`${x},${y}`)) {
         return { x, y };
@@ -236,7 +251,25 @@ const findNextAvailablePosition = (
     }
   }
 
-  // If no position is found, return the first position (0,0) and log a warning
+  // If no unused spaces found, find the first empty row
+  const maxY = Math.max(...sectionStates.map(s => s.position.y), -1);
+  const nextY = maxY + 1;
+
+  // Try to place in the left side first
+  for (let x = 0; x <= 1; x++) {
+    if (!occupiedPositions.has(`${x},${nextY}`)) {
+      return { x, y: nextY };
+    }
+  }
+
+  // If left side is full, try right side
+  for (let x = 3; x <= 4; x++) {
+    if (!occupiedPositions.has(`${x},${nextY}`)) {
+      return { x, y: nextY };
+    }
+  }
+
+  // If all positions are occupied, return the first position (0,0) and log a warning
   console.warn('No available positions found in grid, defaulting to (0,0)');
   return { x: 0, y: 0 };
 };
@@ -286,7 +319,7 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
 
   // Update useEffect for loading sections
   useEffect(() => {
-    if (typeof window !== 'undefined' && sections.length > 0 && !initialized) {
+    if (typeof window !== 'undefined' && sections.length > 0) {
       try {
         const savedPositions = localStorage.getItem('sectionPositions');
         const positions = savedPositions ? JSON.parse(savedPositions) : {};
@@ -295,8 +328,12 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
         
         // Process sections one by one to properly track occupied positions
         for (const section of sections) {
+          // First try to use the position from the database
+          const dbPosition = section.position;
+          // Then fall back to saved position from localStorage
           const savedPosition = positions[section.key];
-          const position = savedPosition || findNextAvailablePosition(
+          // Finally, find a new position if neither exists
+          const position = dbPosition || savedPosition || findNextAvailablePosition(
             initialStates,
             middleColumnIndex,
             gridWidth,
@@ -309,6 +346,14 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
             status: section.status,
             number: section.sectionNumber
           });
+
+          // If we used a position from localStorage or found a new position,
+          // update the database to maintain consistency
+          if (!dbPosition && (savedPosition || position)) {
+            const warehouseLetter = section.key.charAt(0);
+            const sectionNumber = parseInt(section.key.slice(1));
+            onSectionPositionUpdate(warehouseLetter, sectionNumber, position);
+          }
         }
         
         setSectionStates(initialStates);
@@ -317,7 +362,7 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
         console.error('Error loading saved positions:', error);
       }
     }
-  }, [sections, middleColumnIndex, gridWidth, gridHeight, initialized]);
+  }, [sections, middleColumnIndex, gridWidth, gridHeight, onSectionPositionUpdate]);
 
   // Save positions to localStorage whenever they change
   useEffect(() => {
@@ -336,7 +381,7 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
 
   // Update existing sections while maintaining their positions
   useEffect(() => {
-    if (sections.length > 0 && initialized) {
+    if (sections.length > 0) {
       setSectionStates(prevStates => {
         const newStates = sections.map(section => {
           const existingState = prevStates.find(state => state.id === section.key);
@@ -344,21 +389,18 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
             return {
               ...existingState,
               status: section.status,
-              number: section.sectionNumber
+              number: section.sectionNumber,
+              position: section.position || existingState.position
             };
           }
-
-          // Find next available position for new section
-          const position = findNextAvailablePosition(
-            prevStates,
-            middleColumnIndex,
-            gridWidth,
-            gridHeight
-          );
-
           return {
             id: section.key,
-            position,
+            position: section.position || findNextAvailablePosition(
+              prevStates,
+              middleColumnIndex,
+              gridWidth,
+              gridHeight
+            ),
             status: section.status,
             number: section.sectionNumber
           };
@@ -366,7 +408,7 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
         return newStates;
       });
     }
-  }, [sections, middleColumnIndex, gridWidth, gridHeight, initialized]);
+  }, [sections, middleColumnIndex, gridWidth, gridHeight]);
 
   // Add effect to handle window resize
   useEffect(() => {
@@ -397,14 +439,9 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
   const rowGap = 8; // Vertical gap
   const aisleWidth = 12; // Wider aisle
 
-  const isValidColumn = (x: number) => {
-    // Allow positions in first two columns (0,1) or last two columns (3,4)
-    return (x <= 1) || (x >= 3 && x <= 4);
-  };
-
   const handleDrop = async (sectionId: string, newPosition: Position) => {
     // Don't allow dropping in the aisle column
-    if (newPosition.x === middleColumnIndex) {
+    if (newPosition.x === 2) {
       return;
     }
 
@@ -419,13 +456,7 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
       return;
     }
 
-    // Validate column position
-    const isValidColumn = newPosition.x <= 1 || (newPosition.x >= 3 && newPosition.x <= 4);
-    if (!isValidColumn) {
-      return;
-    }
-
-    // Update the section's position
+    // Update the section's position in local state first
     setSectionStates(prevStates => {
       const newStates = prevStates.map(section => 
         section.id === sectionId
@@ -447,8 +478,25 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
       return newStates;
     });
 
-    // Notify parent component
-    onSectionMove(sectionId, newPosition);
+    // Update the position in the database
+    const warehouseLetter = sectionId.charAt(0);
+    const sectionNumber = parseInt(sectionId.slice(1));
+    const success = await onSectionPositionUpdate(warehouseLetter, sectionNumber, newPosition);
+
+    if (success) {
+      // Notify parent component only after successful database update
+      onSectionMove(sectionId, newPosition);
+    } else {
+      // If database update fails, revert the local state
+      setSectionStates(prevStates => {
+        const revertedStates = prevStates.map(section => 
+          section.id === sectionId
+            ? { ...section, position: section.position }
+            : section
+        );
+        return revertedStates;
+      });
+    }
   };
 
   const handleStatusChange = (sectionId: string, status: WarehouseStatus) => {
@@ -847,9 +895,10 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
                 const x = index % gridWidth;
                 const y = Math.floor(index / gridWidth);
                 
-                if (x === middleColumnIndex) return null;
+                // Skip the aisle column
+                if (x === 2) return null;
                 
-                const xPosition = x < middleColumnIndex
+                const xPosition = x < 2
                   ? x * (gridSize + columnGap)
                   : (x - 1) * (gridSize + columnGap) + aisleWidth + gridSize;
                 
@@ -868,7 +917,8 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
                       top: `${yPosition}px`,
                       width: `${gridSize}px`,
                       height: `${gridSize}px`,
-                      transform: 'translateZ(0)'
+                      transform: 'translateZ(0)',
+                      zIndex: 1
                     }}
                   >
                     <DropZone

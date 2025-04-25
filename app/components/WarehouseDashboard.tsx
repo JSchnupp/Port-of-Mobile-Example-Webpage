@@ -49,67 +49,11 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
     : 0;
 
   useEffect(() => {
-    // Simulate fetching historical data based on time range
-    const fetchHistoricalData = () => {
-      const now = new Date();
-      const data = [];
-      let count = 0;
-
-      switch (timeRange) {
-        case "day":
-          count = 24; // Hours in a day
-          for (let i = 0; i < count; i++) {
-            data.push({
-              date: new Date(now.getTime() - (count - i) * 60 * 60 * 1000).toISOString(),
-              utilization: Math.random() * 100,
-            });
-          }
-          break;
-        case "week":
-          count = 7; // Days in a week
-          for (let i = 0; i < count; i++) {
-            data.push({
-              date: new Date(now.getTime() - (count - i) * 24 * 60 * 60 * 1000).toISOString(),
-              utilization: Math.random() * 100,
-            });
-          }
-          break;
-        case "month":
-          count = 30; // Days in a month
-          for (let i = 0; i < count; i++) {
-            data.push({
-              date: new Date(now.getTime() - (count - i) * 24 * 60 * 60 * 1000).toISOString(),
-              utilization: Math.random() * 100,
-            });
-          }
-          break;
-        case "year":
-          count = 12; // Months in a year
-          for (let i = 0; i < count; i++) {
-            data.push({
-              date: new Date(now.getTime() - (count - i) * 30 * 24 * 60 * 60 * 1000).toISOString(),
-              utilization: Math.random() * 100,
-            });
-          }
-          break;
-        case "custom":
-          if (startDate && endDate) {
-            const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
-            for (let i = 0; i < days; i++) {
-              data.push({
-                date: new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000).toISOString(),
-                utilization: Math.random() * 100,
-              });
-            }
-          }
-          break;
-      }
-
-      setHistoricalData(data);
-    };
-
-    fetchHistoricalData();
-  }, [timeRange, startDate, endDate]);
+    // Use the actual utilization data from stats
+    if (stats.historicalData) {
+      setHistoricalData(stats.historicalData);
+    }
+  }, [stats.historicalData]);
 
   const handleTimeRangeChange = (range: "day" | "week" | "month" | "year" | "custom", start?: Date, end?: Date) => {
     setTimeRange(range);
