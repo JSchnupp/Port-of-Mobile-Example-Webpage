@@ -49,18 +49,13 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
     : 0;
 
   useEffect(() => {
-    // Use the actual utilization data from stats
     if (stats.historicalData) {
       setHistoricalData(stats.historicalData);
     }
   }, [stats.historicalData]);
 
-  const handleTimeRangeChange = (range: "day" | "week" | "month" | "year" | "custom", start?: Date, end?: Date) => {
+  const handleTimeRangeChange = (range: "day" | "week" | "month" | "year" | "custom") => {
     setTimeRange(range);
-    if (range === "custom" && start && end) {
-      setStartDate(start);
-      setEndDate(end);
-    }
   };
 
   return (
