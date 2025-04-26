@@ -4,19 +4,28 @@ import Link from 'next/link';
 import { WarehouseDashboard } from "../components/WarehouseDashboard";
 import { useWarehouses } from "../hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage } from "../utils/warehouse-utils";
+import { useState } from 'react';
 
 export default function DashboardPage() {
   const { indoorWarehouses, outdoorWarehouses, buttonStatus } = useWarehouses();
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
+
+  // Filter button status based on selected warehouse
+  const filteredButtonStatus = selectedWarehouse === "all"
+    ? buttonStatus
+    : Object.fromEntries(
+        Object.entries(buttonStatus).filter(([key]) => key.startsWith(selectedWarehouse))
+      );
 
   // Calculate actual utilization stats
-  const totalSections = Object.keys(buttonStatus).length;
-  const occupiedSections = Object.values(buttonStatus).filter(status => status === 'green').length;
+  const totalSections = Object.keys(filteredButtonStatus).length;
+  const occupiedSections = Object.values(filteredButtonStatus).filter(status => status === 'green').length;
   const availableSections = totalSections - occupiedSections;
 
   // Calculate percentages
-  const totalPercentage = calculateTotalPercentage(buttonStatus);
-  const indoorPercentage = calculateIndoorPercentage(buttonStatus, indoorWarehouses.map(w => w.letter));
-  const outdoorPercentage = calculateOutdoorPercentage(buttonStatus, outdoorWarehouses.map(w => w.letter));
+  const totalPercentage = calculateTotalPercentage(filteredButtonStatus);
+  const indoorPercentage = calculateIndoorPercentage(filteredButtonStatus, indoorWarehouses.map(w => w.letter));
+  const outdoorPercentage = calculateOutdoorPercentage(filteredButtonStatus, outdoorWarehouses.map(w => w.letter));
 
   // Generate fake historical data for the past 7 days
   const generateHistoricalData = () => {
@@ -52,6 +61,12 @@ export default function DashboardPage() {
     historicalData: generateHistoricalData()
   };
 
+  // Combine indoor and outdoor warehouses for the dropdown
+  const allWarehouses = [
+    ...indoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'indoor' })),
+    ...outdoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'outdoor' }))
+  ];
+
   return (
     <div className="container mx-auto p-4">
       {/* Back button */}
@@ -78,7 +93,9 @@ export default function DashboardPage() {
 
       <WarehouseDashboard 
         stats={stats}
-        currentWarehouse="All Warehouses"
+        currentWarehouse={selectedWarehouse}
+        warehouses={allWarehouses}
+        onWarehouseChange={setSelectedWarehouse}
       />
     </div>
   );

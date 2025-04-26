@@ -5,6 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WarehouseStatus } from "../../types/database";
 import { TimeFilter } from "./TimeFilter";
 import { LineChart } from "../components/ui/chart";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectSeparator,
+  SelectGroup,
+  SelectLabel,
+} from "@/components/ui/select";
 
 interface UtilizationStats {
   totalSections: number;
@@ -22,6 +32,8 @@ interface UtilizationStats {
 interface WarehouseDashboardProps {
   stats: UtilizationStats;
   currentWarehouse?: string;
+  warehouses: { letter: string; name: string; type: 'indoor' | 'outdoor' }[];
+  onWarehouseChange?: (warehouseLetter: string) => void;
 }
 
 const CustomProgress = ({ value }: { value: number }) => {
@@ -38,6 +50,8 @@ const CustomProgress = ({ value }: { value: number }) => {
 export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
   stats,
   currentWarehouse,
+  warehouses,
+  onWarehouseChange,
 }) => {
   const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -58,6 +72,12 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
     setTimeRange(range);
   };
 
+  const handleWarehouseChange = (value: string) => {
+    if (onWarehouseChange) {
+      onWarehouseChange(value);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -74,8 +94,40 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{currentWarehouse || "None"}</div>
-            <p className="text-xs text-muted-foreground">
+            <Select
+              value={currentWarehouse}
+              onValueChange={handleWarehouseChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select warehouse" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Warehouses</SelectItem>
+                <SelectSeparator />
+                <SelectGroup>
+                  <SelectLabel>Indoor Warehouses</SelectLabel>
+                  {warehouses
+                    .filter(w => w.type === 'indoor')
+                    .map((warehouse) => (
+                      <SelectItem key={warehouse.letter} value={warehouse.letter}>
+                        {warehouse.name} ({warehouse.letter})
+                      </SelectItem>
+                    ))}
+                </SelectGroup>
+                <SelectSeparator />
+                <SelectGroup>
+                  <SelectLabel>Outdoor Warehouses</SelectLabel>
+                  {warehouses
+                    .filter(w => w.type === 'outdoor')
+                    .map((warehouse) => (
+                      <SelectItem key={warehouse.letter} value={warehouse.letter}>
+                        {warehouse.name} ({warehouse.letter})
+                      </SelectItem>
+                    ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-2">
               Active warehouse location
             </p>
           </CardContent>
