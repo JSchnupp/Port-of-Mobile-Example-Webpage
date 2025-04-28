@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { WarehouseStatus } from "../../types/database";
-import { TimeFilter } from "./TimeFilter";
-import { LineChart } from "../components/ui/chart";
+import { WarehouseStatus } from "@/types/database";
+import { TimeFilter } from "../filters/TimeFilter";
+import { LineChart } from "../charts/LineChart";
 
 interface UtilizationStats {
   totalSections: number;

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { WarehouseDashboard } from "../components/WarehouseDashboard";
-import { WarehouseSelector } from "../components/WarehouseSelector";
+import { WarehouseDashboard } from "../components/warehouse/WarehouseDashboard";
+import { WarehouseSelector } from "../components/warehouse/WarehouseSelector";
 import { useWarehouses } from "../hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage } from "../utils/warehouse-utils";
 import { useState } from 'react';

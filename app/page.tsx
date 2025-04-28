@@ -8,14 +8,14 @@ import Link from 'next/link'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 import { TouchBackend } from 'react-dnd-touch-backend'
-import { WarehouseItem } from "./components/WarehouseItem";
-import { WarehouseForm } from "./components/WarehouseForm";
+import { WarehouseItem } from "./components/warehouse/WarehouseItem";
+import { WarehouseForm } from "./components/forms/WarehouseForm";
+import { DraggableGrid } from "./components/grid/DraggableGrid";
+import { AddSpaceForm } from "./components/forms/AddSpaceForm";
 import { useWarehouses, type UseWarehousesReturn } from "./hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage, statusColors } from "./utils/warehouse-utils";
 import type { WarehouseStatus } from '../types/database';
-import { DraggableGrid } from "./components/DraggableGrid";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Label } from 'recharts';
-import { AddSpaceForm } from "./components/AddSpaceForm";
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -871,7 +871,7 @@ export default function Home() {
                     const name = (document.getElementById('name') as HTMLInputElement).value;
                     const sections = parseInt((document.getElementById('sections') as HTMLInputElement).value);
                     
-                    if (name && sections) {
+                    if (name && sections && showAddWarehouseModal.type) {
                       await createWarehouse(showAddWarehouseModal.type, name, sections);
                       setShowAddWarehouseModal({ type: null });
                     }
