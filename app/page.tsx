@@ -16,7 +16,7 @@ import { useWarehouses, type UseWarehousesReturn } from "./hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage, statusColors } from "./utils/warehouse-utils";
 import type { WarehouseStatus } from '../types/database';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Label } from 'recharts';
-import { Button } from "@/components/ui/button"
+import { Button } from "./components/ui/button";
 import {
   Card,
   CardContent,
@@ -27,6 +27,12 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label as UILabel } from "@/components/ui/label"
+import { Calendar } from "./components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "./lib/utils";
 
 interface WarehouseSection {
   status: WarehouseStatus;
