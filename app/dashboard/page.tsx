@@ -1,19 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { WarehouseDashboard } from "../components/WarehouseDashboard";
+import { WarehouseDashboard } from "../components/warehouse/WarehouseDashboard";
+import { WarehouseSelector } from "../components/warehouse/WarehouseSelector";
 import { useWarehouses } from "../hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage } from "../utils/warehouse-utils";
 import { useState, useEffect } from 'react';
 
 export default function DashboardPage() {
   const { indoorWarehouses, outdoorWarehouses, buttonStatus } = useWarehouses();
-  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
-  const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>('all');
 
   // Filter button status based on selected warehouse
-  const filteredButtonStatus = selectedWarehouse === "all"
-    ? buttonStatus
+  const filteredButtonStatus = selectedWarehouse === 'all' 
+    ? buttonStatus 
     : Object.fromEntries(
         Object.entries(buttonStatus).filter(([key]) => key.startsWith(selectedWarehouse))
       );
@@ -88,10 +88,8 @@ export default function DashboardPage() {
 
   // Combine indoor and outdoor warehouses for the dropdown
   const allWarehouses = [
-    { letter: "indoor", name: "All Indoor Warehouses" },
-    { letter: "outdoor", name: "All Outdoor Warehouses" },
-    ...indoorWarehouses.map(w => ({ letter: w.letter, name: w.name })),
-    ...outdoorWarehouses.map(w => ({ letter: w.letter, name: w.name }))
+    ...indoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'indoor' as const })),
+    ...outdoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'outdoor' as const }))
   ];
 
   return (
@@ -118,11 +116,16 @@ export default function DashboardPage() {
         </Link>
       </div>
 
+      <div className="mb-6">
+        <WarehouseSelector
+          warehouses={allWarehouses}
+          onWarehouseChange={setSelectedWarehouse}
+        />
+      </div>
+
       <WarehouseDashboard 
         stats={stats}
-        currentWarehouse={selectedWarehouse}
-        warehouses={allWarehouses}
-        onWarehouseChange={setSelectedWarehouse}
+        currentWarehouse={selectedWarehouse === 'all' ? 'All Warehouses' : allWarehouses.find(w => w.letter === selectedWarehouse)?.name}
       />
     </div>
   );

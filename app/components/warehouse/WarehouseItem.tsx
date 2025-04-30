@@ -3,11 +3,6 @@
 import { Warehouse } from "../../types/database";
 import { cn } from "@/lib/utils";
 
-const statusColors = {
-  red: { color: 'bg-rose-500' },
-  green: { color: 'bg-emerald-500' }
-};
-
 interface WarehouseItemProps {
   warehouse: Warehouse;
   onClick: () => void;
