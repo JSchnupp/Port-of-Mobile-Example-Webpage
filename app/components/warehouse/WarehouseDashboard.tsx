@@ -57,8 +57,10 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
   const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
 
   const utilizationPercentage = stats.totalSections > 0
-    ? (stats.occupiedSections / stats.totalSections) * 100
+    ? ((stats.totalSections - stats.availableSections) / stats.totalSections) * 100
     : 0;
+
+  const utilizationText = `${stats.totalSections - stats.availableSections} of ${stats.totalSections} sections utilized`;
 
   useEffect(() => {
     // Use the actual utilization data from stats
@@ -116,7 +118,7 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
             <div className="text-2xl font-bold">{utilizationPercentage.toFixed(1)}%</div>
             <CustomProgress value={utilizationPercentage} colorBlindMode={colorBlindMode} />
             <p className="text-xs text-muted-foreground mt-2">
-              {stats.occupiedSections} of {stats.totalSections} sections in use
+              {utilizationText}
             </p>
           </CardContent>
         </Card>
