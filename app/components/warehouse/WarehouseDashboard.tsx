@@ -175,13 +175,14 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
           <div className="h-[300px]">
             <LineChart
               data={historicalData.map(d => ({
-                date: new Date(d.date).toLocaleDateString(),
+                date: new Date(d.date).toISOString(),
                 value: d.utilization
               }))}
               xAxisKey="date"
               yAxisKey="value"
               tooltipFormatter={(value) => `${value.toFixed(1)}% utilization`}
               colorBlindMode={colorBlindMode}
+              timeRange={timeRange}
             />
           </div>
         </CardContent>

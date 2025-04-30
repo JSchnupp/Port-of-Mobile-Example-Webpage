@@ -68,8 +68,8 @@ export default function DashboardPage() {
     const data = [];
     const today = new Date();
     
-    // Generate data for the past 7 days
-    for (let i = 6; i >= 0; i--) {
+    // Generate data for the past 7 days, starting from today
+    for (let i = 0; i < 7; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
       
@@ -97,7 +97,7 @@ export default function DashboardPage() {
       const variation = (Math.random() - 0.5) * 4;
       const historicalUtilization = Math.max(0, Math.min(100, dayUtilization + variation));
       
-      data.push({
+      data.unshift({
         date: date.toISOString(),
         utilization: historicalUtilization
       });
