@@ -30,6 +30,11 @@ interface WarehouseDashboardProps {
   stats: UtilizationStats;
   currentWarehouse?: string;
   colorBlindMode?: boolean;
+  warehouses?: Array<{
+    letter: string;
+    name: string;
+    type: 'all' | 'indoor' | 'outdoor';
+  }>;
 }
 
 const CustomProgress = ({ value, colorBlindMode }: { value: number; colorBlindMode?: boolean }) => {
@@ -50,6 +55,7 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
   stats,
   currentWarehouse,
   colorBlindMode = false,
+  warehouses = [],
 }) => {
   const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -82,6 +88,15 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
     return status === 'green' ? '#22c55e' : '#ef4444'; // Green for occupied, Red for available
   };
 
+  const getWarehouseName = () => {
+    if (currentWarehouse === 'all') return 'All Warehouses';
+    if (currentWarehouse === 'indoor') return 'All Indoor Warehouses';
+    if (currentWarehouse === 'outdoor') return 'All Outdoor Warehouses';
+    
+    const warehouse = warehouses.find(w => w.letter === currentWarehouse);
+    return warehouse ? `${warehouse.name} (${warehouse.type})` : currentWarehouse;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -90,6 +105,20 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Current Warehouse Card */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Current Warehouse
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {getWarehouseName()}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Total Sections Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

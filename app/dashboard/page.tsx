@@ -223,6 +223,7 @@ export default function DashboardPage() {
           stats={stats}
           currentWarehouse={selectedWarehouse}
           colorBlindMode={colorBlindMode}
+          warehouses={allWarehouses}
         />
       </div>
     </div>
