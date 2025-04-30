@@ -15,11 +15,17 @@ import {
   SelectLabel,
   SelectSeparator,
 } from "@/components/ui/select";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+import { Sun, Moon, Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { indoorWarehouses, outdoorWarehouses, buttonStatus } = useWarehouses();
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('all');
   const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
+  const { theme, setTheme } = useTheme();
+  const [colorBlindMode, setColorBlindMode] = useState(false);
 
   // Filter button status based on selected warehouse
   const filteredButtonStatus = (() => {
@@ -152,42 +158,71 @@ export default function DashboardPage() {
       <div className="flex flex-col space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Warehouse Utilization</h2>
-          <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
-            <SelectTrigger className="w-[300px]">
-              <SelectValue placeholder="Select warehouse" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Overall</SelectLabel>
-                <SelectItem value="all">All Warehouses</SelectItem>
-              </SelectGroup>
-              <SelectSeparator />
-              <SelectGroup>
-                <SelectLabel>Indoor Warehouses</SelectLabel>
-                <SelectItem value="indoor">All Indoor Warehouses</SelectItem>
-                {indoorWarehouses.map((warehouse) => (
-                  <SelectItem key={warehouse.letter} value={warehouse.letter}>
-                    {warehouse.name} ({warehouse.letter})
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-              <SelectSeparator />
-              <SelectGroup>
-                <SelectLabel>Outdoor Warehouses</SelectLabel>
-                <SelectItem value="outdoor">All Outdoor Warehouses</SelectItem>
-                {outdoorWarehouses.map((warehouse) => (
-                  <SelectItem key={warehouse.letter} value={warehouse.letter}>
-                    {warehouse.name} ({warehouse.letter})
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-4">
+            <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
+              <SelectTrigger className="w-[300px]">
+                <SelectValue placeholder="Select warehouse" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Overall</SelectLabel>
+                  <SelectItem value="all">All Warehouses</SelectItem>
+                </SelectGroup>
+                <SelectSeparator />
+                <SelectGroup>
+                  <SelectLabel>Indoor Warehouses</SelectLabel>
+                  <SelectItem value="indoor">All Indoor Warehouses</SelectItem>
+                  {indoorWarehouses.map((warehouse) => (
+                    <SelectItem key={warehouse.letter} value={warehouse.letter}>
+                      {warehouse.name} ({warehouse.letter})
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+                <SelectSeparator />
+                <SelectGroup>
+                  <SelectLabel>Outdoor Warehouses</SelectLabel>
+                  <SelectItem value="outdoor">All Outdoor Warehouses</SelectItem>
+                  {outdoorWarehouses.map((warehouse) => (
+                    <SelectItem key={warehouse.letter} value={warehouse.letter}>
+                      {warehouse.name} ({warehouse.letter})
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="h-9 w-9"
+              >
+                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setColorBlindMode(!colorBlindMode)}
+                className={cn(
+                  "h-9 w-9",
+                  colorBlindMode && "bg-blue-100 dark:bg-blue-900"
+                )}
+              >
+                <Eye className="h-4 w-4" />
+                <span className="sr-only">Toggle color blind mode</span>
+              </Button>
+            </div>
+          </div>
         </div>
 
         <WarehouseDashboard 
           stats={stats}
           currentWarehouse={selectedWarehouse}
+          colorBlindMode={colorBlindMode}
         />
       </div>
     </div>

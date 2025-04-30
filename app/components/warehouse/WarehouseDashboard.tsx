@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WarehouseStatus } from "@/types/database";
 import { TimeFilter } from "../filters/TimeFilter";
 import { LineChart } from "../charts/LineChart";
+import { cn } from "@/lib/utils";
 
 interface UtilizationStats {
   totalSections: number;
@@ -28,13 +29,17 @@ interface Warehouse {
 interface WarehouseDashboardProps {
   stats: UtilizationStats;
   currentWarehouse?: string;
+  colorBlindMode?: boolean;
 }
 
-const CustomProgress = ({ value }: { value: number }) => {
+const CustomProgress = ({ value, colorBlindMode }: { value: number; colorBlindMode?: boolean }) => {
   return (
     <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
       <div
-        className="h-full bg-blue-500 transition-all duration-300"
+        className={cn(
+          "h-full transition-all duration-300",
+          colorBlindMode ? "bg-blue-500" : "bg-blue-500"
+        )}
         style={{ width: `${value}%` }}
       />
     </div>
@@ -44,6 +49,7 @@ const CustomProgress = ({ value }: { value: number }) => {
 export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
   stats,
   currentWarehouse,
+  colorBlindMode = false,
 }) => {
   const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -67,6 +73,13 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
       setStartDate(start);
       setEndDate(end);
     }
+  };
+
+  const getStatusColor = (status: string) => {
+    if (colorBlindMode) {
+      return status === 'green' ? '#2563eb' : '#dc2626'; // Blue for occupied, Red for available
+    }
+    return status === 'green' ? '#22c55e' : '#ef4444'; // Green for occupied, Red for available
   };
 
   return (
@@ -101,7 +114,7 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{utilizationPercentage.toFixed(1)}%</div>
-            <CustomProgress value={utilizationPercentage} />
+            <CustomProgress value={utilizationPercentage} colorBlindMode={colorBlindMode} />
             <p className="text-xs text-muted-foreground mt-2">
               {stats.occupiedSections} of {stats.totalSections} sections in use
             </p>
@@ -139,6 +152,7 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
               xAxisKey="date"
               yAxisKey="value"
               tooltipFormatter={(value) => `${value.toFixed(1)}% utilization`}
+              colorBlindMode={colorBlindMode}
             />
           </div>
         </CardContent>
@@ -154,7 +168,7 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
             {Object.entries(stats.statusBreakdown).map(([status, count]) => (
               <div key={status} className="flex items-center space-x-2">
                 <div className="w-3 h-3 rounded-full" style={{
-                  backgroundColor: status === 'green' ? '#22c55e' : '#ef4444'
+                  backgroundColor: getStatusColor(status)
                 }} />
                 <div className="flex-1">
                   <div className="text-sm font-medium capitalize">{status}</div>
