@@ -5,13 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WarehouseStatus } from "@/types/database";
 import { TimeFilter } from "../filters/TimeFilter";
 import { LineChart } from "../charts/LineChart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface UtilizationStats {
   totalSections: number;
@@ -29,14 +22,12 @@ interface UtilizationStats {
 interface Warehouse {
   letter: string;
   name: string;
-  type: 'indoor' | 'outdoor';
+  type: 'all' | 'indoor' | 'outdoor';
 }
 
 interface WarehouseDashboardProps {
   stats: UtilizationStats;
   currentWarehouse?: string;
-  warehouses: Warehouse[];
-  onWarehouseChange?: (warehouseLetter: string) => void;
 }
 
 const CustomProgress = ({ value }: { value: number }) => {
@@ -53,8 +44,6 @@ const CustomProgress = ({ value }: { value: number }) => {
 export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
   stats,
   currentWarehouse,
-  warehouses,
-  onWarehouseChange,
 }) => {
   const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -80,12 +69,6 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
     }
   };
 
-  const handleWarehouseChange = (value: string) => {
-    if (onWarehouseChange) {
-      onWarehouseChange(value);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -94,36 +77,6 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Warehouse Overview Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Current Warehouse
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Select
-              value={currentWarehouse}
-              onValueChange={handleWarehouseChange}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select warehouse" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Warehouses</SelectItem>
-                {warehouses.map((warehouse) => (
-                  <SelectItem key={warehouse.letter} value={warehouse.letter}>
-                    {warehouse.name} ({warehouse.letter})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground mt-2">
-              Active warehouse location
-            </p>
-          </CardContent>
-        </Card>
-
         {/* Total Sections Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

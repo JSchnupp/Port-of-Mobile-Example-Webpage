@@ -5,6 +5,16 @@ import { WarehouseDashboard } from "../components/warehouse/WarehouseDashboard";
 import { useWarehouses } from "../hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage } from "../utils/warehouse-utils";
 import { useState, useEffect } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
+} from "@/components/ui/select";
 
 export default function DashboardPage() {
   const { indoorWarehouses, outdoorWarehouses, buttonStatus } = useWarehouses();
@@ -108,6 +118,7 @@ export default function DashboardPage() {
 
   // Combine indoor and outdoor warehouses for the dropdown
   const allWarehouses = [
+    { letter: "all", name: "All Warehouses", type: 'all' as const },
     { letter: "indoor", name: "All Indoor Warehouses", type: 'indoor' as const },
     { letter: "outdoor", name: "All Outdoor Warehouses", type: 'outdoor' as const },
     ...indoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'indoor' as const })),
@@ -138,12 +149,47 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <WarehouseDashboard 
-        stats={stats}
-        currentWarehouse={selectedWarehouse}
-        warehouses={allWarehouses}
-        onWarehouseChange={setSelectedWarehouse}
-      />
+      <div className="flex flex-col space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Warehouse Utilization</h2>
+          <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
+            <SelectTrigger className="w-[300px]">
+              <SelectValue placeholder="Select warehouse" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Overall</SelectLabel>
+                <SelectItem value="all">All Warehouses</SelectItem>
+              </SelectGroup>
+              <SelectSeparator />
+              <SelectGroup>
+                <SelectLabel>Indoor Warehouses</SelectLabel>
+                <SelectItem value="indoor">All Indoor Warehouses</SelectItem>
+                {indoorWarehouses.map((warehouse) => (
+                  <SelectItem key={warehouse.letter} value={warehouse.letter}>
+                    {warehouse.name} ({warehouse.letter})
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+              <SelectSeparator />
+              <SelectGroup>
+                <SelectLabel>Outdoor Warehouses</SelectLabel>
+                <SelectItem value="outdoor">All Outdoor Warehouses</SelectItem>
+                {outdoorWarehouses.map((warehouse) => (
+                  <SelectItem key={warehouse.letter} value={warehouse.letter}>
+                    {warehouse.name} ({warehouse.letter})
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <WarehouseDashboard 
+          stats={stats}
+          currentWarehouse={selectedWarehouse}
+        />
+      </div>
     </div>
   );
 } 
