@@ -1,11 +1,12 @@
 import React from "react";
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import "./globals.css";
 import "./styles/patterns.css";
 import { Providers } from './providers'
 import Link from "next/link";
+import { ThemeProvider } from "next-themes";
 
 const geistSans = GeistSans;
 const geistMono = GeistMono;
@@ -30,9 +31,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
-          <main>{children}</main>
-        </Providers>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <Providers>
+            <main>{children}</main>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

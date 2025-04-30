@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { WarehouseDashboard } from "../components/warehouse/WarehouseDashboard";
-import { WarehouseSelector } from "../components/warehouse/WarehouseSelector";
 import { useWarehouses } from "../hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage } from "../utils/warehouse-utils";
 import { useState, useEffect } from 'react';
@@ -10,18 +9,38 @@ import { useState, useEffect } from 'react';
 export default function DashboardPage() {
   const { indoorWarehouses, outdoorWarehouses, buttonStatus } = useWarehouses();
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('all');
+  const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
 
   // Filter button status based on selected warehouse
-  const filteredButtonStatus = selectedWarehouse === 'all' 
-    ? buttonStatus 
-    : Object.fromEntries(
+  const filteredButtonStatus = (() => {
+    if (selectedWarehouse === 'all') {
+      return buttonStatus;
+    } else if (selectedWarehouse === 'indoor') {
+      // Filter for all indoor warehouses
+      return Object.fromEntries(
+        Object.entries(buttonStatus).filter(([key]) => 
+          indoorWarehouses.some(w => key.startsWith(w.letter))
+        )
+      );
+    } else if (selectedWarehouse === 'outdoor') {
+      // Filter for all outdoor warehouses
+      return Object.fromEntries(
+        Object.entries(buttonStatus).filter(([key]) => 
+          outdoorWarehouses.some(w => key.startsWith(w.letter))
+        )
+      );
+    } else {
+      // Filter for specific warehouse
+      return Object.fromEntries(
         Object.entries(buttonStatus).filter(([key]) => key.startsWith(selectedWarehouse))
       );
+    }
+  })();
 
   // Calculate actual utilization stats
   const totalSections = Object.keys(filteredButtonStatus).length;
   const occupiedSections = Object.values(filteredButtonStatus).filter(status => status === 'green').length;
-  const availableSections = totalSections - occupiedSections;
+  const availableSections = Object.values(filteredButtonStatus).filter(status => status === 'red').length;
 
   // Calculate percentages
   const totalPercentage = calculateTotalPercentage(filteredButtonStatus);
@@ -29,49 +48,50 @@ export default function DashboardPage() {
   const outdoorPercentage = calculateOutdoorPercentage(filteredButtonStatus, outdoorWarehouses.map(w => w.letter));
 
   // Generate historical data based on the actual warehouse data
-  useEffect(() => {
-    const generateHistoricalData = () => {
-      const data = [];
-      const today = new Date();
+  const generateHistoricalData = () => {
+    const data = [];
+    const today = new Date();
+    
+    // Generate data for the past 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
       
-      // Generate data for the past 7 days
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        
-        let dayUtilization = 0;
-        if (selectedWarehouse === "all") {
-          // For "all", use the overall utilization
-          dayUtilization = totalPercentage;
-        } else if (selectedWarehouse === "indoor") {
-          // For indoor warehouses
-          dayUtilization = indoorPercentage;
-        } else if (selectedWarehouse === "outdoor") {
-          // For outdoor warehouses
-          dayUtilization = outdoorPercentage;
-        } else {
-          // For a specific warehouse
-          const warehouseSections = Object.entries(buttonStatus)
-            .filter(([key]) => key.startsWith(selectedWarehouse));
-          if (warehouseSections.length > 0) {
-            const greenSections = warehouseSections.filter(([, status]) => status === 'green').length;
-            dayUtilization = (greenSections / warehouseSections.length) * 100;
-          }
+      let dayUtilization = 0;
+      if (selectedWarehouse === "all") {
+        // For "all", use the overall utilization
+        dayUtilization = totalPercentage;
+      } else if (selectedWarehouse === "indoor") {
+        // For indoor warehouses
+        dayUtilization = indoorPercentage;
+      } else if (selectedWarehouse === "outdoor") {
+        // For outdoor warehouses
+        dayUtilization = outdoorPercentage;
+      } else {
+        // For a specific warehouse
+        const warehouseSections = Object.entries(buttonStatus)
+          .filter(([key]) => key.startsWith(selectedWarehouse));
+        if (warehouseSections.length > 0) {
+          const greenSections = warehouseSections.filter(([, status]) => status === 'green').length;
+          dayUtilization = (greenSections / warehouseSections.length) * 100;
         }
-        
-        // Add minimal random variation (±2%) to make the graph more realistic
-        const variation = (Math.random() - 0.5) * 4;
-        const historicalUtilization = Math.max(0, Math.min(100, dayUtilization + variation));
-        
-        data.push({
-          date: date.toISOString(),
-          utilization: historicalUtilization
-        });
       }
       
-      return data;
-    };
+      // Add minimal random variation (±2%) to make the graph more realistic
+      const variation = (Math.random() - 0.5) * 4;
+      const historicalUtilization = Math.max(0, Math.min(100, dayUtilization + variation));
+      
+      data.push({
+        date: date.toISOString(),
+        utilization: historicalUtilization
+      });
+    }
+    
+    return data;
+  };
 
+  // Update historical data when dependencies change
+  useEffect(() => {
     setHistoricalData(generateHistoricalData());
   }, [selectedWarehouse, buttonStatus, totalPercentage, indoorPercentage, outdoorPercentage]);
 
@@ -88,6 +108,8 @@ export default function DashboardPage() {
 
   // Combine indoor and outdoor warehouses for the dropdown
   const allWarehouses = [
+    { letter: "indoor", name: "All Indoor Warehouses", type: 'indoor' as const },
+    { letter: "outdoor", name: "All Outdoor Warehouses", type: 'outdoor' as const },
     ...indoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'indoor' as const })),
     ...outdoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'outdoor' as const }))
   ];
@@ -116,16 +138,11 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <div className="mb-6">
-        <WarehouseSelector
-          warehouses={allWarehouses}
-          onWarehouseChange={setSelectedWarehouse}
-        />
-      </div>
-
       <WarehouseDashboard 
         stats={stats}
-        currentWarehouse={selectedWarehouse === 'all' ? 'All Warehouses' : allWarehouses.find(w => w.letter === selectedWarehouse)?.name}
+        currentWarehouse={selectedWarehouse}
+        warehouses={allWarehouses}
+        onWarehouseChange={setSelectedWarehouse}
       />
     </div>
   );
