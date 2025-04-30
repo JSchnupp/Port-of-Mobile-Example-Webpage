@@ -11,9 +11,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectSeparator,
-  SelectGroup,
-  SelectLabel,
 } from "@/components/ui/select";
 
 interface UtilizationStats {
@@ -32,7 +29,7 @@ interface UtilizationStats {
 interface WarehouseDashboardProps {
   stats: UtilizationStats;
   currentWarehouse?: string;
-  warehouses: { letter: string; name: string; type: 'indoor' | 'outdoor' }[];
+  warehouses: { letter: string; name: string }[];
   onWarehouseChange?: (warehouseLetter: string) => void;
 }
 
@@ -103,28 +100,11 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Warehouses</SelectItem>
-                <SelectSeparator />
-                <SelectGroup>
-                  <SelectLabel>Indoor Warehouses</SelectLabel>
-                  {warehouses
-                    .filter(w => w.type === 'indoor')
-                    .map((warehouse) => (
-                      <SelectItem key={warehouse.letter} value={warehouse.letter}>
-                        {warehouse.name} ({warehouse.letter})
-                      </SelectItem>
-                    ))}
-                </SelectGroup>
-                <SelectSeparator />
-                <SelectGroup>
-                  <SelectLabel>Outdoor Warehouses</SelectLabel>
-                  {warehouses
-                    .filter(w => w.type === 'outdoor')
-                    .map((warehouse) => (
-                      <SelectItem key={warehouse.letter} value={warehouse.letter}>
-                        {warehouse.name} ({warehouse.letter})
-                      </SelectItem>
-                    ))}
-                </SelectGroup>
+                {warehouses.map((warehouse) => (
+                  <SelectItem key={warehouse.letter} value={warehouse.letter}>
+                    {warehouse.name} ({warehouse.letter})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground mt-2">

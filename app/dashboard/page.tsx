@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { WarehouseDashboard } from "../components/WarehouseDashboard";
 import { useWarehouses } from "../hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage } from "../utils/warehouse-utils";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function DashboardPage() {
   const { indoorWarehouses, outdoorWarehouses, buttonStatus } = useWarehouses();
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
+  const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
 
   // Filter button status based on selected warehouse
   const filteredButtonStatus = selectedWarehouse === "all"
@@ -27,28 +28,52 @@ export default function DashboardPage() {
   const indoorPercentage = calculateIndoorPercentage(filteredButtonStatus, indoorWarehouses.map(w => w.letter));
   const outdoorPercentage = calculateOutdoorPercentage(filteredButtonStatus, outdoorWarehouses.map(w => w.letter));
 
-  // Generate fake historical data for the past 7 days
-  const generateHistoricalData = () => {
-    const data = [];
-    const today = new Date();
-    
-    // Generate data for the past 7 days
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
+  // Generate historical data based on the actual warehouse data
+  useEffect(() => {
+    const generateHistoricalData = () => {
+      const data = [];
+      const today = new Date();
       
-      // Generate a random variation around the current utilization
-      const variation = (Math.random() - 0.5) * 20; // ±10% variation
-      const historicalUtilization = Math.max(0, Math.min(100, totalPercentage + variation));
+      // Generate data for the past 7 days
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        
+        let dayUtilization = 0;
+        if (selectedWarehouse === "all") {
+          // For "all", use the overall utilization
+          dayUtilization = totalPercentage;
+        } else if (selectedWarehouse === "indoor") {
+          // For indoor warehouses
+          dayUtilization = indoorPercentage;
+        } else if (selectedWarehouse === "outdoor") {
+          // For outdoor warehouses
+          dayUtilization = outdoorPercentage;
+        } else {
+          // For a specific warehouse
+          const warehouseSections = Object.entries(buttonStatus)
+            .filter(([key]) => key.startsWith(selectedWarehouse));
+          if (warehouseSections.length > 0) {
+            const greenSections = warehouseSections.filter(([, status]) => status === 'green').length;
+            dayUtilization = (greenSections / warehouseSections.length) * 100;
+          }
+        }
+        
+        // Add minimal random variation (±2%) to make the graph more realistic
+        const variation = (Math.random() - 0.5) * 4;
+        const historicalUtilization = Math.max(0, Math.min(100, dayUtilization + variation));
+        
+        data.push({
+          date: date.toISOString(),
+          utilization: historicalUtilization
+        });
+      }
       
-      data.push({
-        date: date.toISOString(),
-        utilization: historicalUtilization
-      });
-    }
-    
-    return data;
-  };
+      return data;
+    };
+
+    setHistoricalData(generateHistoricalData());
+  }, [selectedWarehouse, buttonStatus, totalPercentage, indoorPercentage, outdoorPercentage]);
 
   const stats = {
     totalSections,
@@ -58,13 +83,15 @@ export default function DashboardPage() {
       green: occupiedSections,
       red: availableSections,
     },
-    historicalData: generateHistoricalData()
+    historicalData
   };
 
   // Combine indoor and outdoor warehouses for the dropdown
   const allWarehouses = [
-    ...indoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'indoor' })),
-    ...outdoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'outdoor' }))
+    { letter: "indoor", name: "All Indoor Warehouses" },
+    { letter: "outdoor", name: "All Outdoor Warehouses" },
+    ...indoorWarehouses.map(w => ({ letter: w.letter, name: w.name })),
+    ...outdoorWarehouses.map(w => ({ letter: w.letter, name: w.name }))
   ];
 
   return (
