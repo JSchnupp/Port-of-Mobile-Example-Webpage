@@ -57,10 +57,11 @@ export const LineChart: React.FC<LineChartProps> = ({
         />
         <YAxis
           tick={{ fontSize: 12 }}
-          tickFormatter={(value) => `${value}%`}
+          tickFormatter={(value) => `${Math.round(value)}%`}
+          domain={[0, 100]}
         />
         <Tooltip
-          formatter={(value) => tooltipFormatter(value as number)}
+          formatter={(value) => tooltipFormatter(Math.round(value as number))}
           labelFormatter={(label) => {
             if (typeof label === "string") {
               return label;
