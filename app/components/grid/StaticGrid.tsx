@@ -72,7 +72,7 @@ const StaticSection: React.FC<{
                    ${section.status === 'green' 
                      ? 'bg-emerald-500/90 hover:bg-emerald-500/95' 
                      : 'bg-red-500/90 hover:bg-red-500/95'
-                   } ${colorBlindMode ? 'pattern-diagonal-lines' : ''}`}
+                   } ${colorBlindMode ? (section.status === 'green' ? 'pattern-diagonal-lines' : 'pattern-dots') : ''}`}
         onClick={() => onStatusChange(section.id, section.status === 'green' ? 'red' : 'green')}
       />
       {onDelete && !isDeleting && (
@@ -223,7 +223,7 @@ export const StaticGrid: React.FC<StaticGridProps> = ({
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10">
         <div className="w-full max-w-lg mx-auto px-4 pt-4">
-          <div className="bg-gradient-to-r from-blue-600/10 to-cyan-500/10 backdrop-blur-sm rounded-lg border border-white/5 overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600/60 to-cyan-500/60 dark:from-blue-600/10 dark:to-cyan-500/10 backdrop-blur-sm rounded-lg border border-white/5 overflow-hidden">
             <div className="flex items-center justify-between p-4 relative">
               {onClose && (
                 <button

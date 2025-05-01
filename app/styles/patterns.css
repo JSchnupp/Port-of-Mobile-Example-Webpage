@@ -4,10 +4,10 @@
 .pattern-diagonal-lines {
   background-image: repeating-linear-gradient(
     45deg,
-    rgba(255, 255, 255, 0.2) 0px,
-    rgba(255, 255, 255, 0.2) 2px,
-    transparent 2px,
-    transparent 4px
+    rgba(255, 255, 255, 0.3) 0px,
+    rgba(255, 255, 255, 0.3) 4px,
+    transparent 4px,
+    transparent 8px
   );
 }
 
@@ -15,10 +15,10 @@
 .pattern-dots {
   background-image: radial-gradient(
     circle,
-    rgba(255, 255, 255, 0.2) 1px,
-    transparent 1px
+    rgba(255, 255, 255, 0.3) 2px,
+    transparent 2px
   );
-  background-size: 8px 8px;
+  background-size: 12px 12px;
 }
 
 /* Pattern colors */
