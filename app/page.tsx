@@ -34,6 +34,7 @@ import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "./lib/utils";
 import { calculateUtilizationStats, calculateIndoorUtilization, calculateOutdoorUtilization } from '../lib/warehouse-calculations';
+import { UndoNotification } from './components/ui/undo-notification';
 
 interface WarehouseSection {
   status: WarehouseStatus;
@@ -77,6 +78,12 @@ export default function Home() {
   const [showAddWarehouseModal, setShowAddWarehouseModal] = useState<{ type: 'indoor' | 'outdoor' | null }>({ type: null });
   const [isMobile, setIsMobile] = useState(false);
   const [isUtilizationMinimized, setIsUtilizationMinimized] = useState(false);
+  const [showUndoNotification, setShowUndoNotification] = useState(false);
+  const [lastDeletedItem, setLastDeletedItem] = useState<{
+    type: 'section' | 'row';
+    warehouseLetter: string;
+    sectionNumber?: number;
+  } | null>(null);
   
   const warehouseData = useWarehouses() as unknown as UseWarehousesReturn;
   const {
@@ -179,11 +186,14 @@ export default function Home() {
   const handleDeleteRow = async () => {
     if (!selectedWarehouse) return;
     
-    try {
-      await removeRow(selectedWarehouse);
-    } catch (error) {
-      console.error('Error deleting row:', error);
-    }
+    await removeRow(selectedWarehouse);
+    
+    // Show undo notification
+    setLastDeletedItem({
+      type: 'row',
+      warehouseLetter: selectedWarehouse
+    });
+    setShowUndoNotification(true);
   };
 
   // Calculate percentages using the utility functions
@@ -311,6 +321,36 @@ export default function Home() {
       console.error('Error removing warehouses:', error);
       // Optionally add error handling UI here
     }
+  };
+
+  const handleDeleteSection = async (sectionId: string) => {
+    const warehouseLetter = sectionId.charAt(0);
+    const sectionNumber = parseInt(sectionId.slice(1));
+    
+    await removeSection(warehouseLetter, sectionNumber);
+    
+    // Show undo notification
+    setLastDeletedItem({
+      type: 'section',
+      warehouseLetter,
+      sectionNumber
+    });
+    setShowUndoNotification(true);
+  };
+
+  const handleUndo = async () => {
+    if (!lastDeletedItem) return;
+
+    if (lastDeletedItem.type === 'section' && lastDeletedItem.sectionNumber) {
+      // Restore a single section
+      await addSections(lastDeletedItem.warehouseLetter, 1);
+    } else if (lastDeletedItem.type === 'row') {
+      // For row deletion, we need to add back 3 sections
+      await addSections(lastDeletedItem.warehouseLetter, 3);
+    }
+
+    setShowUndoNotification(false);
+    setLastDeletedItem(null);
   };
 
   if (loading) {
@@ -732,11 +772,7 @@ export default function Home() {
                     const sectionNumber = parseInt(sectionId.slice(1));
                     await updateSectionStatus(warehouseLetter, sectionNumber, status);
                   }}
-                  onDeleteSection={async (sectionId) => {
-                    const warehouseLetter = sectionId.charAt(0);
-                    const sectionNumber = parseInt(sectionId.slice(1));
-                    await removeSection(warehouseLetter, sectionNumber);
-                  }}
+                  onDeleteSection={handleDeleteSection}
                   onDeleteRow={handleDeleteRow}
                   currentWarehouse={[...indoorWarehouses, ...outdoorWarehouses].find(w => w.letter === selectedWarehouse)?.name}
                   onClose={() => setSelectedWarehouse(null)}
@@ -947,6 +983,17 @@ export default function Home() {
               </CardFooter>
             </Card>
           </div>
+        )}
+
+        {showUndoNotification && lastDeletedItem && (
+          <UndoNotification
+            message={`${lastDeletedItem.type === 'section' ? 'Section' : 'Row'} deleted`}
+            onUndo={handleUndo}
+            onClose={() => {
+              setShowUndoNotification(false);
+              setLastDeletedItem(null);
+            }}
+          />
         )}
             </div>
           </div>
