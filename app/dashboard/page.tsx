@@ -148,7 +148,7 @@ export default function DashboardPage() {
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Overall</SelectLabel>
-                  <SelectItem value="all">All Warehouses</SelectItem>
+                  <SelectItem value="all">Total Port Utilization</SelectItem>
                 </SelectGroup>
                 <SelectSeparator />
                 <SelectGroup>
@@ -203,7 +203,9 @@ export default function DashboardPage() {
 
         <WarehouseDashboard 
           stats={dashboardStats}
-          currentWarehouse={allWarehouses.find(w => w.letter === selectedWarehouse)?.name || selectedWarehouse}
+          currentWarehouse={selectedWarehouse === 'all' 
+            ? 'Total Port Utilization' 
+            : allWarehouses.find(w => w.letter === selectedWarehouse)?.name || selectedWarehouse}
           colorBlindMode={colorBlindMode}
         />
       </div>

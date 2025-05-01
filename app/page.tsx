@@ -416,43 +416,10 @@ export default function Home() {
                       <Cell fill={theme === 'dark' ? "#3b82f6" : "#2563eb"} />
                       <Cell fill={theme === 'dark' ? "#a855f7" : "#9333ea"} />
                       <Cell fill={theme === 'dark' ? "#4b5563" : "#9ca3af"} />
-                      
-                      <Label
-                        content={({ viewBox }) => {
-                          if (!viewBox || !('cx' in viewBox) || !('cy' in viewBox)) return null;
-                          return (
-                            <>
-                              <text
-                                x={viewBox.cx}
-                                y={(viewBox.cy ?? 0) - 10}
-                                textAnchor="middle"
-                                dominantBaseline="central"
-                                className="fill-gray-900 dark:fill-white"
-                                style={{ fontSize: '24px', fontWeight: 'bold' }}
-                              >
-                                {Math.round(stats.utilizationPercent)}%
-                              </text>
-                              <text
-                                x={viewBox.cx}
-                                y={(viewBox.cy ?? 0) + 15}
-                                textAnchor="middle"
-                                className="fill-gray-800 dark:fill-gray-200"
-                                style={{ fontSize: '14px', fontWeight: '500' }}
-                              >
-                                Total Used
-                              </text>
-                            </>
-                          );
-                        }}
-                      />
                     </Pie>
-                    <Tooltip 
-                      formatter={(value) => `${Math.round(Number(value))}% Unused`}
-                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              {/* Legend/breakdown */}
               <div className="flex justify-around mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="text-center">
                   <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
