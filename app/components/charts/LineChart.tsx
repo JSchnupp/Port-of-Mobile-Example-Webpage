@@ -12,7 +12,7 @@ import {
 
 interface ChartData {
   date: string;
-  value: number;
+  utilization: number;
 }
 
 interface LineChartProps {

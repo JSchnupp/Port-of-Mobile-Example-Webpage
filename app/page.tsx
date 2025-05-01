@@ -553,7 +553,7 @@ export default function Home() {
 
             {/* Outdoor Warehouses Dropdown */}
             <div className="bg-white/90 dark:bg-gray-800/90 p-8 rounded-2xl shadow-xl backdrop-blur-sm relative z-[60]">
-              <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100 text-center">Outdoor Warehouses</h2>
+              <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100 text-center">Outdoor Laydown Spaces</h2>
               <div className="relative dropdown-container">
                 <button
                   onClick={() => {

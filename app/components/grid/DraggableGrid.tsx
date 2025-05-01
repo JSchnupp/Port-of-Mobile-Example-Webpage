@@ -778,8 +778,8 @@ export const DraggableGrid: React.FC<DraggableGridProps> = ({
           {currentWarehouse && (
             <div className="bg-gradient-to-r from-blue-600/10 to-cyan-500/10 backdrop-blur-sm rounded-lg border border-white/5 overflow-hidden">
               <div className="flex flex-col">
-                <div className="flex items-center justify-between p-2">
-                  <h2 className="text-white/90 text-sm font-medium">{currentWarehouse}</h2>
+                <div className="flex items-center justify-between p-4">
+                  <h2 className="text-white/90 text-xl font-semibold">{currentWarehouse}</h2>
                   {onClose && (
                     <button
                       onClick={onClose}

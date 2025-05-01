@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WarehouseStatus } from "@/types/database";
 import { TimeFilter } from "../filters/TimeFilter";
 import { LineChart } from "../charts/LineChart";
+import { WarehouseSelector } from "./WarehouseSelector";
 
 interface UtilizationStats {
   totalSections: number;
@@ -22,6 +23,13 @@ interface UtilizationStats {
 interface WarehouseDashboardProps {
   stats: UtilizationStats;
   currentWarehouse?: string;
+  warehouses: Array<{
+    letter: string;
+    name: string;
+    type: 'indoor' | 'outdoor';
+  }>;
+  onWarehouseChange: (warehouse: string) => void;
+  onTimeRangeChange: (range: "day" | "week" | "month" | "year" | "custom", startDate?: Date, endDate?: Date) => void;
 }
 
 const CustomProgress = ({ value }: { value: number }) => {
@@ -38,6 +46,9 @@ const CustomProgress = ({ value }: { value: number }) => {
 export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
   stats,
   currentWarehouse,
+  warehouses,
+  onWarehouseChange,
+  onTimeRangeChange,
 }) => {
   const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
   const [startDate, setStartDate] = useState<Date | undefined>();
@@ -49,11 +60,15 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
     : 0;
 
   useEffect(() => {
-    // Use the actual utilization data from stats
+    // Update historical data when time range changes
     if (stats.historicalData) {
-      setHistoricalData(stats.historicalData);
+      const newData = stats.historicalData.map(d => ({
+        date: d.date,
+        utilization: d.utilization
+      }));
+      setHistoricalData(newData);
     }
-  }, [stats.historicalData]);
+  }, [stats.historicalData, timeRange]);
 
   const handleTimeRangeChange = (range: "day" | "week" | "month" | "year" | "custom", start?: Date, end?: Date) => {
     setTimeRange(range);
@@ -61,12 +76,13 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
       setStartDate(start);
       setEndDate(end);
     }
+    onTimeRangeChange(range, start, end);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Warehouse Utilization</h2>
+        <h2 className="text-2xl font-bold">Dashboard</h2>
         <TimeFilter onRangeChange={handleTimeRangeChange} />
       </div>
 
@@ -78,8 +94,11 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
               Current Warehouse
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{currentWarehouse || "None"}</div>
+          <CardContent className="space-y-2">
+            <WarehouseSelector
+              warehouses={warehouses}
+              onWarehouseChange={onWarehouseChange}
+            />
             <p className="text-xs text-muted-foreground">
               Active warehouse location
             </p>
@@ -141,12 +160,9 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
         <CardContent>
           <div className="h-[300px]">
             <LineChart
-              data={historicalData.map(d => ({
-                date: new Date(d.date).toLocaleDateString(),
-                value: d.utilization
-              }))}
+              data={historicalData}
               xAxisKey="date"
-              yAxisKey="value"
+              yAxisKey="utilization"
               tooltipFormatter={(value) => `${value.toFixed(1)}% utilization`}
             />
           </div>
