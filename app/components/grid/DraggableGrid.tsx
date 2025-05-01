@@ -5,8 +5,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { TouchBackend } from 'react-dnd-touch-backend';
-import { statusColors } from '../utils/warehouse-utils';
-import type { WarehouseStatus } from '../../types/database';
+import { statusColors } from '@/utils/warehouse-utils';
+import type { WarehouseStatus } from '@/types/database';
 import type { DragSourceMonitor, DropTargetMonitor } from 'react-dnd';
 
 // Constants for grid dimensions

@@ -2,6 +2,7 @@
 
 import { Warehouse } from "../../types/database";
 import { cn } from "@/lib/utils";
+import { statusColors } from '@/utils/warehouse-utils';
 
 interface WarehouseItemProps {
   warehouse: Warehouse;
