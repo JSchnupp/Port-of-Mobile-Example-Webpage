@@ -5,7 +5,6 @@ import { GeistMono } from 'geist/font/mono';
 import "./globals.css";
 import "./styles/patterns.css";
 import { Providers } from './providers'
-import Link from "next/link";
 import { ThemeProvider } from "next-themes";
 
 const geistSans = GeistSans;

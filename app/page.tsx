@@ -1,7 +1,8 @@
 "use client";
+import React from "react";
 import { useState, useEffect } from "react";
 import { useTheme } from 'next-themes'
-import { SunIcon, MoonIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
+import { SunIcon, MoonIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -75,6 +76,7 @@ export default function Home() {
   const [isRemovingOutdoor, setIsRemovingOutdoor] = useState(false);
   const [showAddWarehouseModal, setShowAddWarehouseModal] = useState<{ type: 'indoor' | 'outdoor' | null }>({ type: null });
   const [isMobile, setIsMobile] = useState(false);
+  const [isUtilizationMinimized, setIsUtilizationMinimized] = useState(false);
   
   const warehouseData = useWarehouses() as unknown as UseWarehousesReturn;
   const {
@@ -354,20 +356,19 @@ export default function Home() {
         <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center">
           {/* Header Section */}
           <div className="w-full max-w-6xl flex flex-col items-center mb-12">
-          <div className="relative w-48 sm:w-64 h-12 sm:h-16 mb-6">
-            <Image
-              src="/images/apa-logo-full.png"
-              alt="Alabama Port Authority Logo"
-                width={256}
-                height={64}
-              style={{ objectFit: 'contain' }}
-              priority
-                className="dark:brightness-0 dark:invert transition-all duration-300"
-            />
-          </div>
-            <h1 className="text-3xl sm:text-[40pt] font-[family-name:var(--font-geist-mono)] bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 bg-clip-text text-transparent tracking-tight text-center font-bold mb-8">
-            Warehouse Management
-          </h1>
+            <div className="mb-4">
+              <Image
+                src={theme === 'dark' ? "/logo.png" : "/logo-black.png"}
+                alt="Port Logo"
+                width={150}
+                height={75}
+                priority
+                className="h-auto w-auto"
+              />
+            </div>
+            <h1 className="text-3xl sm:text-[40pt] font-[family-name:var(--font-geist-mono)] bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 bg-clip-text text-transparent tracking-tight text-center font-bold mb-4 leading-normal py-2">
+              Warehouse Management
+            </h1>
 
             {/* Dashboard Link Button */}
             <Link 
@@ -383,10 +384,29 @@ export default function Home() {
         </div>
 
           {/* Utilization Stats and Pie Chart */}
-          <div className="w-full max-w-6xl mb-8">
-            <div className="bg-white/90 dark:bg-gray-800/90 p-8 rounded-2xl shadow-xl backdrop-blur-sm">
-              <h3 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Port Utilization</h3>
-              <div className="h-72">
+          <div className="w-full max-w-6xl mb-6">
+            <div className="bg-white/90 dark:bg-gray-800/90 py-4 px-8 rounded-2xl shadow-xl backdrop-blur-sm">
+              <div className="flex justify-between items-center mb-2 relative">
+                <div className="flex-1" /> {/* Left spacer */}
+                <h3 className="text-3xl sm:text-4xl font-[family-name:var(--font-geist-mono)] bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 bg-clip-text text-transparent font-bold absolute left-1/2 -translate-x-1/2">
+                  Port Utilization
+                </h3>
+                <div className="flex-1 flex justify-end"> {/* Right spacer with button */}
+                  <button
+                    onClick={() => setIsUtilizationMinimized(!isUtilizationMinimized)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    aria-label={isUtilizationMinimized ? "Expand" : "Minimize"}
+                  >
+                    {isUtilizationMinimized ? (
+                      <ChevronDownIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                    ) : (
+                      <ChevronUpIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isUtilizationMinimized ? 'h-0' : 'h-96'}`}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -407,8 +427,8 @@ export default function Home() {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      outerRadius={100}
-                      innerRadius={60}
+                      outerRadius={130}
+                      innerRadius={90}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -425,20 +445,20 @@ export default function Home() {
                             <>
                               <text
                                 x={viewBox.cx}
-                                y={(viewBox.cy ?? 0) - 10}
+                                y={(viewBox.cy ?? 0) - 15}
                                 textAnchor="middle"
                                 dominantBaseline="central"
-                                className="fill-gray-900 dark:fill-white"
-                                style={{ fontSize: '24px', fontWeight: 'bold' }}
+                                className="fill-gray-900 dark:fill-white font-[family-name:var(--font-geist-mono)]"
+                                style={{ fontSize: '28px', fontWeight: 'bold' }}
                               >
                                 {totalUtilization}%
                               </text>
                               <text
                                 x={viewBox.cx}
-                                y={(viewBox.cy ?? 0) + 15}
+                                y={(viewBox.cy ?? 0) + 20}
                                 textAnchor="middle"
-                                className="fill-gray-800 dark:fill-gray-200"
-                                style={{ fontSize: '14px', fontWeight: '500' }}
+                                className="fill-gray-800 dark:fill-gray-200 font-[family-name:var(--font-geist-mono)]"
+                                style={{ fontSize: '16px', fontWeight: '500' }}
                               >
                                 Total Utilization
                               </text>
