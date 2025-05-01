@@ -23,6 +23,8 @@ export interface WarehouseSection {
 export interface DailyUtilization {
   id: string
   warehouse_id: string | null
+  total_space: number
+  utilized_space: number
   utilization_percent: number
   date: string
   created_at: string

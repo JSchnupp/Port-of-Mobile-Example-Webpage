@@ -1,8 +1,7 @@
 "use client";
-import React from "react";
 import { useState, useEffect } from "react";
 import { useTheme } from 'next-themes'
-import { SunIcon, MoonIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline'
+import { SunIcon, MoonIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -34,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "./lib/utils";
+import { calculateUtilizationStats, calculateIndoorUtilization, calculateOutdoorUtilization } from '../lib/warehouse-calculations';
 
 interface WarehouseSection {
   status: WarehouseStatus;
@@ -76,7 +76,6 @@ export default function Home() {
   const [isRemovingOutdoor, setIsRemovingOutdoor] = useState(false);
   const [showAddWarehouseModal, setShowAddWarehouseModal] = useState<{ type: 'indoor' | 'outdoor' | null }>({ type: null });
   const [isMobile, setIsMobile] = useState(false);
-  const [isUtilizationMinimized, setIsUtilizationMinimized] = useState(false);
   
   const warehouseData = useWarehouses() as unknown as UseWarehousesReturn;
   const {
@@ -187,9 +186,9 @@ export default function Home() {
   };
 
   // Calculate percentages using the utility functions
-  const totalPercentage = calculateTotalPercentage(buttonStatus);
-  const indoorPercentage = calculateIndoorPercentage(buttonStatus, indoorWarehouses.map(w => w.letter));
-  const outdoorPercentage = calculateOutdoorPercentage(buttonStatus, outdoorWarehouses.map(w => w.letter));
+  const stats = calculateUtilizationStats(buttonStatus);
+  const indoorStats = calculateIndoorUtilization(buttonStatus, indoorWarehouses.map(w => w.letter));
+  const outdoorStats = calculateOutdoorUtilization(buttonStatus, outdoorWarehouses.map(w => w.letter));
 
   // Custom tooltip formatter for the pie chart
   const tooltipFormatter = (
@@ -356,19 +355,20 @@ export default function Home() {
         <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center">
           {/* Header Section */}
           <div className="w-full max-w-6xl flex flex-col items-center mb-12">
-            <div className="mb-4">
-              <Image
-                src={theme === 'dark' ? "/logo.png" : "/logo-black.png"}
-                alt="Port Logo"
-                width={150}
-                height={75}
-                priority
-                className="h-auto w-auto"
-              />
-            </div>
-            <h1 className="text-3xl sm:text-[40pt] font-[family-name:var(--font-geist-mono)] bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 bg-clip-text text-transparent tracking-tight text-center font-bold mb-4 leading-normal py-2">
-              Warehouse Management
-            </h1>
+          <div className="relative w-48 sm:w-64 h-12 sm:h-16 mb-6">
+            <Image
+              src="/images/apa-logo-full.png"
+              alt="Alabama Port Authority Logo"
+                width={256}
+                height={64}
+              style={{ objectFit: 'contain' }}
+              priority
+                className="dark:brightness-0 dark:invert transition-all duration-300"
+            />
+          </div>
+            <h1 className="text-3xl sm:text-[40pt] font-[family-name:var(--font-geist-mono)] bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 bg-clip-text text-transparent tracking-tight text-center font-bold mb-8">
+            Warehouse Management
+          </h1>
 
             {/* Dashboard Link Button */}
             <Link 
@@ -384,83 +384,62 @@ export default function Home() {
         </div>
 
           {/* Utilization Stats and Pie Chart */}
-          <div className="w-full max-w-6xl mb-6">
-            <div className="bg-white/90 dark:bg-gray-800/90 py-4 px-8 rounded-2xl shadow-xl backdrop-blur-sm">
-              <div className="flex justify-between items-center mb-2 relative">
-                <div className="flex-1" /> {/* Left spacer */}
-                <h3 className="text-3xl sm:text-4xl font-[family-name:var(--font-geist-mono)] bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300 bg-clip-text text-transparent font-bold absolute left-1/2 -translate-x-1/2">
-                  Port Utilization
-                </h3>
-                <div className="flex-1 flex justify-end"> {/* Right spacer with button */}
-                  <button
-                    onClick={() => setIsUtilizationMinimized(!isUtilizationMinimized)}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    aria-label={isUtilizationMinimized ? "Expand" : "Minimize"}
-                  >
-                    {isUtilizationMinimized ? (
-                      <ChevronDownIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-                    ) : (
-                      <ChevronUpIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              
-              <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isUtilizationMinimized ? 'h-0' : 'h-96'}`}>
+          <div className="w-full max-w-6xl mb-8">
+            <div className="bg-white/90 dark:bg-gray-800/90 p-8 rounded-2xl shadow-xl backdrop-blur-sm">
+              <h3 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Port Utilization</h3>
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={[
                         { 
                           name: 'Indoor Warehouses', 
-                          value: (100 - indoorPercentage)
+                          value: indoorStats.utilizationPercent
                         },
                         { 
                           name: 'Outdoor Laydown', 
-                          value: (100 - outdoorPercentage)
+                          value: outdoorStats.utilizationPercent
                         },
                         { 
                           name: 'Unused Space', 
-                          value: (indoorPercentage + outdoorPercentage) / 2
+                          value: 100 - stats.utilizationPercent
                         }
                       ]}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      outerRadius={130}
-                      innerRadius={90}
+                      outerRadius={100}
+                      innerRadius={60}
                       fill="#8884d8"
                       dataKey="value"
                     >
                       <Cell fill={theme === 'dark' ? "#3b82f6" : "#2563eb"} />
                       <Cell fill={theme === 'dark' ? "#a855f7" : "#9333ea"} />
                       <Cell fill={theme === 'dark' ? "#4b5563" : "#9ca3af"} />
+                      
                       <Label
                         content={({ viewBox }) => {
                           if (!viewBox || !('cx' in viewBox) || !('cy' in viewBox)) return null;
-                          const totalUtilization = Math.round(
-                            (200 - (indoorPercentage + outdoorPercentage)) / 2
-                          );
                           return (
                             <>
                               <text
                                 x={viewBox.cx}
-                                y={(viewBox.cy ?? 0) - 15}
+                                y={(viewBox.cy ?? 0) - 10}
                                 textAnchor="middle"
                                 dominantBaseline="central"
-                                className="fill-gray-900 dark:fill-white font-[family-name:var(--font-geist-mono)]"
-                                style={{ fontSize: '28px', fontWeight: 'bold' }}
+                                className="fill-gray-900 dark:fill-white"
+                                style={{ fontSize: '24px', fontWeight: 'bold' }}
                               >
-                                {totalUtilization}%
+                                {Math.round(stats.utilizationPercent)}%
                               </text>
                               <text
                                 x={viewBox.cx}
-                                y={(viewBox.cy ?? 0) + 20}
+                                y={(viewBox.cy ?? 0) + 15}
                                 textAnchor="middle"
-                                className="fill-gray-800 dark:fill-gray-200 font-[family-name:var(--font-geist-mono)]"
-                                style={{ fontSize: '16px', fontWeight: '500' }}
+                                className="fill-gray-800 dark:fill-gray-200"
+                                style={{ fontSize: '14px', fontWeight: '500' }}
                               >
-                                Total Utilization
+                                Total Used
                               </text>
                             </>
                           );
@@ -468,7 +447,7 @@ export default function Home() {
                       />
                     </Pie>
                     <Tooltip 
-                      formatter={(value) => `${Math.round(Number(value))}% Utilized`}
+                      formatter={(value) => `${Math.round(Number(value))}% Unused`}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -477,7 +456,7 @@ export default function Home() {
               <div className="flex justify-around mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="text-center">
                   <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                    {Math.round(100 - indoorPercentage)}%
+                    {Math.round(indoorStats.utilizationPercent)}%
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Indoor Warehouses
@@ -485,7 +464,7 @@ export default function Home() {
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
-                    {Math.round(100 - outdoorPercentage)}%
+                    {Math.round(outdoorStats.utilizationPercent)}%
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Outdoor Laydown
@@ -493,7 +472,7 @@ export default function Home() {
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-semibold text-gray-600 dark:text-gray-400">
-                    {Math.round((indoorPercentage + outdoorPercentage) / 2)}%
+                    {Math.round(100 - stats.utilizationPercent)}%
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Unused Space

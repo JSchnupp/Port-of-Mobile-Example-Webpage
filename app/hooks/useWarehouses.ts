@@ -5,6 +5,9 @@ import { createClient } from '../utils/supabase/client'
 import type { Warehouse, WarehouseStatus, WarehouseType } from '../../types/database'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { supabase } from '../../lib/supabase'
+import { updateDailyUtilization } from '../../lib/daily-utilization'
+import { calculateUtilizationStats } from '../../lib/warehouse-calculations'
 
 interface RemovedSection {
   warehouseLetter: string;
@@ -212,6 +215,10 @@ export function useWarehouses(props?: UseWarehousesProps) {
       }
       setButtonStatus(newStatus);
 
+      // Update daily utilization after warehouse creation
+      const stats = calculateUtilizationStats(buttonStatus);
+      await updateDailyUtilization(stats.utilizedSpace, stats.totalSpace);
+
       console.log('Warehouse creation completed successfully');
       return true;
     } catch (error) {
@@ -275,6 +282,10 @@ export function useWarehouses(props?: UseWarehousesProps) {
           ));
         }
       }
+
+      // Update daily utilization after status change
+      const stats = calculateUtilizationStats(buttonStatus);
+      await updateDailyUtilization(stats.utilizedSpace, stats.totalSpace);
 
       return true
     } catch (error) {
@@ -361,6 +372,11 @@ export function useWarehouses(props?: UseWarehousesProps) {
       setButtonStatus(newButtonStatus);
       
       await fetchWarehouses();
+
+      // Update daily utilization after warehouse removal
+      const stats = calculateUtilizationStats(buttonStatus);
+      await updateDailyUtilization(stats.utilizedSpace, stats.totalSpace);
+
       return true;
     } catch (error) {
       console.error('Error removing warehouse:', error);
@@ -427,6 +443,10 @@ export function useWarehouses(props?: UseWarehousesProps) {
         }
       }
 
+      // Update daily utilization after section removal
+      const stats = calculateUtilizationStats(buttonStatus);
+      await updateDailyUtilization(stats.utilizedSpace, stats.totalSpace);
+
       return true;
     } catch (error) {
       console.error('Error removing section:', error);
@@ -487,6 +507,10 @@ export function useWarehouses(props?: UseWarehousesProps) {
           ));
         }
       }
+
+      // Update daily utilization after section undo
+      const stats = calculateUtilizationStats(buttonStatus);
+      await updateDailyUtilization(stats.utilizedSpace, stats.totalSpace);
 
       return true;
     } catch (error) {
@@ -636,11 +660,7 @@ export function useWarehouses(props?: UseWarehousesProps) {
     try {
       console.log('Starting to add sections:', { warehouseLetter, numberOfSections });
       
-      // Input validation
-      if (!warehouseLetter || numberOfSections < 1) {
-        throw new Error('Invalid input: Warehouse letter and positive number of sections required');
-      }
-
+      // Initialize the new sections with provided options or defaults
       // Get the current warehouse
       const { data: warehouse, error: warehouseError } = await supabase
         .from('warehouses')
@@ -673,28 +693,21 @@ export function useWarehouses(props?: UseWarehousesProps) {
           warehouse_id: warehouse.id,
           warehouse_name: warehouse.name,
           section_number: highestSectionNumber + i + 1,
-          status: 'green' as WarehouseStatus,
-          position_x: 0,
-          position_y: 0
+          status: 'green' as WarehouseStatus
         })
       );
 
       console.log('Attempting to insert sections:', sectionsToInsert);
 
       // Insert new sections
-      const { data: insertedSections, error: sectionsError } = await supabase
+      const { error: sectionsError } = await supabase
         .from('warehouse_sections')
-        .insert(sectionsToInsert)
-        .select();
+        .insert(sectionsToInsert);
 
       if (sectionsError) {
         console.error('Error inserting sections:', sectionsError);
         console.error('Error details:', JSON.stringify(sectionsError, null, 2));
         throw new Error(`Failed to insert sections: ${sectionsError.message}`);
-      }
-
-      if (!insertedSections) {
-        throw new Error('No sections were inserted');
       }
 
       // Update button status
@@ -704,22 +717,13 @@ export function useWarehouses(props?: UseWarehousesProps) {
       });
       setButtonStatus(newButtonStatus);
 
-      // Update warehouse sections count and last_modified
-      const { error: updateError } = await supabase
-        .from('warehouses')
-        .update({ 
-          last_modified: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', warehouse.id);
-
-      if (updateError) {
-        console.error('Error updating warehouse:', updateError);
-        console.error('Error details:', JSON.stringify(updateError, null, 2));
-      }
-
-      // Refresh warehouse data
+      // Refresh warehouse data to get updated last_modified
       await fetchWarehouses();
+
+      // Update daily utilization after section addition
+      const stats = calculateUtilizationStats(buttonStatus);
+      await updateDailyUtilization(stats.utilizedSpace, stats.totalSpace);
+
       return true;
     } catch (error) {
       console.error('Error adding sections:', error);
@@ -791,6 +795,10 @@ export function useWarehouses(props?: UseWarehousesProps) {
           ));
         }
       }
+
+      // Update daily utilization after row removal
+      const stats = calculateUtilizationStats(buttonStatus);
+      await updateDailyUtilization(stats.utilizedSpace, stats.totalSpace);
 
       return true;
     } catch (error) {
