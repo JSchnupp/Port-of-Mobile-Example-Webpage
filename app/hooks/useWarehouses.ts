@@ -636,7 +636,11 @@ export function useWarehouses(props?: UseWarehousesProps) {
     try {
       console.log('Starting to add sections:', { warehouseLetter, numberOfSections });
       
-      // Initialize the new sections with provided options or defaults
+      // Input validation
+      if (!warehouseLetter || numberOfSections < 1) {
+        throw new Error('Invalid input: Warehouse letter and positive number of sections required');
+      }
+
       // Get the current warehouse
       const { data: warehouse, error: warehouseError } = await supabase
         .from('warehouses')
@@ -669,21 +673,28 @@ export function useWarehouses(props?: UseWarehousesProps) {
           warehouse_id: warehouse.id,
           warehouse_name: warehouse.name,
           section_number: highestSectionNumber + i + 1,
-          status: 'green' as WarehouseStatus
+          status: 'green' as WarehouseStatus,
+          position_x: 0,
+          position_y: 0
         })
       );
 
       console.log('Attempting to insert sections:', sectionsToInsert);
 
       // Insert new sections
-      const { error: sectionsError } = await supabase
+      const { data: insertedSections, error: sectionsError } = await supabase
         .from('warehouse_sections')
-        .insert(sectionsToInsert);
+        .insert(sectionsToInsert)
+        .select();
 
       if (sectionsError) {
         console.error('Error inserting sections:', sectionsError);
         console.error('Error details:', JSON.stringify(sectionsError, null, 2));
         throw new Error(`Failed to insert sections: ${sectionsError.message}`);
+      }
+
+      if (!insertedSections) {
+        throw new Error('No sections were inserted');
       }
 
       // Update button status
@@ -693,7 +704,21 @@ export function useWarehouses(props?: UseWarehousesProps) {
       });
       setButtonStatus(newButtonStatus);
 
-      // Refresh warehouse data to get updated last_modified
+      // Update warehouse sections count and last_modified
+      const { error: updateError } = await supabase
+        .from('warehouses')
+        .update({ 
+          last_modified: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', warehouse.id);
+
+      if (updateError) {
+        console.error('Error updating warehouse:', updateError);
+        console.error('Error details:', JSON.stringify(updateError, null, 2));
+      }
+
+      // Refresh warehouse data
       await fetchWarehouses();
       return true;
     } catch (error) {
