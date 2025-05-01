@@ -16,10 +16,7 @@ interface ChartData {
 }
 
 interface LineChartProps {
-  data: Array<{
-    date: string;
-    value: number;
-  }>;
+  data: ChartData[];
   xAxisKey: string;
   yAxisKey: string;
   tooltipFormatter?: (value: number) => string;
@@ -49,10 +46,14 @@ export const LineChart: React.FC<LineChartProps> = ({
           dataKey={xAxisKey}
           tick={{ fontSize: 12 }}
           tickFormatter={(value) => {
-            if (typeof value === "string") {
+            try {
+              return new Date(value).toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric'
+              });
+            } catch {
               return value;
             }
-            return new Date(value).toLocaleDateString();
           }}
         />
         <YAxis
@@ -63,10 +64,16 @@ export const LineChart: React.FC<LineChartProps> = ({
         <Tooltip
           formatter={(value) => tooltipFormatter(Math.round(value as number))}
           labelFormatter={(label) => {
-            if (typeof label === "string") {
+            try {
+              return new Date(label).toLocaleDateString(undefined, {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              });
+            } catch {
               return label;
             }
-            return new Date(label).toLocaleDateString();
           }}
         />
         <Line
