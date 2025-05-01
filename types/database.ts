@@ -14,8 +14,12 @@ export interface Warehouse {
 export interface WarehouseSection {
   id: string
   warehouse_id: string
+  warehouse_name: string
   section_number: number
   status: WarehouseStatus
+  position_x: number
+  position_y: number
+  section_type: 'indoor' | 'outdoor'
   created_at: string
   updated_at: string
 }
