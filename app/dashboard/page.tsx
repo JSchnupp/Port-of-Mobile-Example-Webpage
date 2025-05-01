@@ -19,12 +19,12 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Sun, Moon, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { supabase } from '@/lib/supabase';
+import { getDailyUtilization } from '../../lib/daily-utilization';
 
 export default function DashboardPage() {
   const { indoorWarehouses, outdoorWarehouses, buttonStatus } = useWarehouses();
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('all');
-  const [historicalData, setHistoricalData] = useState<{ date: string; value: number }[]>([]);
+  const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
   const { theme, setTheme } = useTheme();
   const [colorBlindMode, setColorBlindMode] = useState(false);
 
@@ -67,23 +67,32 @@ export default function DashboardPage() {
   // Fetch historical data from Supabase
   useEffect(() => {
     const fetchHistoricalData = async () => {
-      const { data, error } = await supabase
-        .from('daily_utilization')
-        .select('date, utilization_percentage')
-        .gte('date', new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]) // last 7 days
-        .order('date', { ascending: true });
+      // Calculate date range for the past 7 days
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 6);
 
-      if (error) {
-        console.error('Supabase fetch error:', error);
-        return;
-      }
+      // Format dates for Supabase query
+      const formattedStartDate = startDate.toISOString().split('T')[0];
+      const formattedEndDate = endDate.toISOString().split('T')[0];
 
-      const transformed = data.map(entry => ({
-        date: entry.date,
-        value: entry.utilization_percentage,
+      // Get warehouse ID if a specific warehouse is selected
+      const warehouseId = selectedWarehouse === 'all' || selectedWarehouse === 'indoor' || selectedWarehouse === 'outdoor'
+        ? undefined
+        : selectedWarehouse;
+
+      const data = await getDailyUtilization(warehouseId, formattedStartDate, formattedEndDate);
+
+      // Transform the data to match the expected format
+      const transformedData = data.map(record => ({
+        date: new Date(record.date).toLocaleDateString(),
+        utilization: record.utilization_percent
       }));
 
-      setHistoricalData(transformed);
+      // Sort data by date to ensure chronological order
+      transformedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      setHistoricalData(transformedData);
     };
 
     fetchHistoricalData();
@@ -97,10 +106,7 @@ export default function DashboardPage() {
       green: occupiedSections,
       red: availableSections,
     },
-    historicalData: historicalData.map(d => ({
-      date: d.date,
-      utilization: d.value
-    }))
+    historicalData
   };
 
   // Combine indoor and outdoor warehouses for the dropdown
@@ -204,7 +210,6 @@ export default function DashboardPage() {
           stats={stats}
           currentWarehouse={selectedWarehouse}
           colorBlindMode={colorBlindMode}
-          warehouses={allWarehouses}
         />
       </div>
     </div>

@@ -12,11 +12,14 @@ import {
 
 interface ChartData {
   date: string;
-  utilization: number;
+  value: number;
 }
 
 interface LineChartProps {
-  data: ChartData[];
+  data: Array<{
+    date: string;
+    value: number;
+  }>;
   xAxisKey: string;
   yAxisKey: string;
   tooltipFormatter?: (value: number) => string;
@@ -46,34 +49,23 @@ export const LineChart: React.FC<LineChartProps> = ({
           dataKey={xAxisKey}
           tick={{ fontSize: 12 }}
           tickFormatter={(value) => {
-            try {
-              return new Date(value).toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric'
-              });
-            } catch {
+            if (typeof value === "string") {
               return value;
             }
+            return new Date(value).toLocaleDateString();
           }}
         />
         <YAxis
           tick={{ fontSize: 12 }}
-          tickFormatter={(value) => `${Math.round(value)}%`}
-          domain={[0, 100]}
+          tickFormatter={(value) => `${value}%`}
         />
         <Tooltip
-          formatter={(value) => tooltipFormatter(Math.round(value as number))}
+          formatter={(value) => tooltipFormatter(value as number)}
           labelFormatter={(label) => {
-            try {
-              return new Date(label).toLocaleDateString(undefined, {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              });
-            } catch {
+            if (typeof label === "string") {
               return label;
             }
+            return new Date(label).toLocaleDateString();
           }}
         />
         <Line
