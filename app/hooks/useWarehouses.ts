@@ -249,20 +249,29 @@ export function useWarehouses(props?: UseWarehousesProps) {
   };
 
   const updateSectionStatus = async (warehouseLetter: string, sectionNumber: number, status: WarehouseStatus) => {
-    if (!supabase) return false;
+    if (!supabase) {
+      console.error('Supabase client not initialized');
+      return false;
+    }
     
     try {
       // Find the warehouse by letter
       const warehouse = [...indoorWarehouses, ...outdoorWarehouses].find(w => w.letter === warehouseLetter)
-      if (!warehouse) throw new Error('Warehouse not found')
+      if (!warehouse) {
+        console.error(`Warehouse with letter ${warehouseLetter} not found`);
+        return false;
+      }
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('warehouse_sections')
         .update({ status })
         .eq('warehouse_id', warehouse.id)
         .eq('section_number', sectionNumber)
 
-      if (error) throw error
+      if (updateError) {
+        console.error('Database update error:', updateError);
+        return false;
+      }
 
       setButtonStatus(prev => ({
         ...prev,
@@ -271,26 +280,40 @@ export function useWarehouses(props?: UseWarehousesProps) {
 
       // Fetch only the updated warehouse
       const updatedWarehouse = await fetchSingleWarehouse(warehouseLetter);
-      if (updatedWarehouse) {
-        if (updatedWarehouse.type === 'indoor') {
-          setIndoorWarehouses(prev => prev.map(w => 
-            w.letter === warehouseLetter ? updatedWarehouse : w
-          ));
-        } else {
-          setOutdoorWarehouses(prev => prev.map(w => 
-            w.letter === warehouseLetter ? updatedWarehouse : w
-          ));
-        }
+      if (!updatedWarehouse) {
+        console.error(`Failed to fetch updated warehouse ${warehouseLetter}`);
+        return false;
+      }
+
+      if (updatedWarehouse.type === 'indoor') {
+        setIndoorWarehouses(prev => prev.map(w => 
+          w.letter === warehouseLetter ? updatedWarehouse : w
+        ));
+      } else {
+        setOutdoorWarehouses(prev => prev.map(w => 
+          w.letter === warehouseLetter ? updatedWarehouse : w
+        ));
       }
 
       // Update daily utilization after status change
       const stats = calculateUtilizationStats(buttonStatus);
-      await updateDailyUtilization(stats.utilizedSpace, stats.totalSpace);
+      const { error: utilizationError } = await updateDailyUtilization(stats.utilizedSpace, stats.totalSpace);
+      
+      if (utilizationError) {
+        console.error('Failed to update daily utilization:', utilizationError);
+        return false;
+      }
 
-      return true
+      return true;
     } catch (error) {
-      console.error('Error updating section status:', error)
-      return false
+      console.error('Error updating section status:', {
+        warehouseLetter,
+        sectionNumber,
+        status,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      return false;
     }
   }
 

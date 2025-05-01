@@ -505,7 +505,14 @@ export default function Home() {
           <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12">
             {/* Indoor Warehouses Dropdown */}
             <div className="bg-white/90 dark:bg-gray-800/90 p-8 rounded-2xl shadow-xl backdrop-blur-sm relative z-[60]">
-              <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100 text-center">Indoor Warehouses</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Indoor Warehouses</h2>
+                {selectedWarehouse && indoorWarehouses.find(w => w.letter === selectedWarehouse)?.last_modified && (
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Last modified: {new Date(indoorWarehouses.find(w => w.letter === selectedWarehouse)?.last_modified!).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
               <div className="relative dropdown-container">
                 <button
                   onClick={() => {
@@ -603,7 +610,14 @@ export default function Home() {
 
             {/* Outdoor Warehouses Dropdown */}
             <div className="bg-white/90 dark:bg-gray-800/90 p-8 rounded-2xl shadow-xl backdrop-blur-sm relative z-[60]">
-              <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100 text-center">Outdoor Laydown Spaces</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Outdoor Laydown Spaces</h2>
+                {selectedWarehouse && outdoorWarehouses.find(w => w.letter === selectedWarehouse)?.last_modified && (
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Last modified: {new Date(outdoorWarehouses.find(w => w.letter === selectedWarehouse)?.last_modified!).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
               <div className="relative dropdown-container">
                 <button
                   onClick={() => {
