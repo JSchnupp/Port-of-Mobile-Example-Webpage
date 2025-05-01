@@ -12,7 +12,7 @@ import {
 
 interface ChartData {
   date: string;
-  utilization: number;
+  value: number;
 }
 
 interface LineChartProps {
@@ -57,11 +57,10 @@ export const LineChart: React.FC<LineChartProps> = ({
         />
         <YAxis
           tick={{ fontSize: 12 }}
-          tickFormatter={(value) => `${Math.round(value)}%`}
-          domain={[0, 100]}
+          tickFormatter={(value) => `${value}%`}
         />
         <Tooltip
-          formatter={(value) => tooltipFormatter(Math.round(value as number))}
+          formatter={(value) => tooltipFormatter(value as number)}
           labelFormatter={(label) => {
             if (typeof label === "string") {
               return label;
