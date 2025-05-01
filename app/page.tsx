@@ -99,6 +99,7 @@ export default function Home() {
     addSections,
     removeWarehouse,
     removeRow,
+    undoSectionRemoval
   } = warehouseData;
 
   const { theme, setTheme } = useTheme()
@@ -267,16 +268,17 @@ export default function Home() {
       clearTimeout(undoTimeout);
       setUndoTimeout(null);
     }
-    undoSectionRemoval(section);
+    undoSectionRemoval({
+      warehouseLetter: section.letter,
+      sectionNumber: section.number,
+      status: 'green' as WarehouseStatus,
+      timestamp: Date.now()
+    });
   };
 
   const clearRemovedSections = () => {
     setRemovedSections([]);
     setUndoTimeout(null);
-  };
-
-  const undoSectionRemoval = (section: { letter: string; number: number }) => {
-    setRemovedSections(prev => prev.filter(s => s.letter !== section.letter || s.number !== section.number));
   };
 
   const toggleWarehouseSelection = (letter: string) => {
@@ -342,11 +344,31 @@ export default function Home() {
     if (!lastDeletedItem) return;
 
     if (lastDeletedItem.type === 'section' && lastDeletedItem.sectionNumber) {
-      // Restore a single section
-      await addSections(lastDeletedItem.warehouseLetter, 1);
+      await undoSectionRemoval({
+        warehouseLetter: lastDeletedItem.warehouseLetter,
+        sectionNumber: lastDeletedItem.sectionNumber,
+        status: 'green' as WarehouseStatus,
+        timestamp: Date.now()
+      });
     } else if (lastDeletedItem.type === 'row') {
-      // For row deletion, we need to add back 3 sections
-      await addSections(lastDeletedItem.warehouseLetter, 3);
+      // For row deletion, we need to add back the last 3 sections
+      const sectionsToAdd = Array.from({ length: 3 }, (_, i) => {
+        const sectionNumber = Object.keys(buttonStatus)
+          .filter(key => key.startsWith(lastDeletedItem.warehouseLetter))
+          .map(key => parseInt(key.slice(1)))
+          .reduce((max, num) => Math.max(max, num), 0) + i + 1;
+        
+        return {
+          warehouseLetter: lastDeletedItem.warehouseLetter,
+          sectionNumber,
+          status: 'green' as WarehouseStatus,
+          timestamp: Date.now()
+        };
+      });
+
+      for (const section of sectionsToAdd) {
+        await undoSectionRemoval(section);
+      }
     }
 
     setShowUndoNotification(false);
