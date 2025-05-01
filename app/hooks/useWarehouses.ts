@@ -709,6 +709,71 @@ export function useWarehouses(props?: UseWarehousesProps) {
     setRemovedSections([]);
   };
 
+  const removeRow = async (warehouseLetter: string) => {
+    if (!supabase) return false;
+    
+    try {
+      // Get all sections for this warehouse
+      const warehouseSections = Object.entries(buttonStatus)
+        .filter(([key]) => key.startsWith(warehouseLetter))
+        .map(([key]) => ({
+          letter: key.charAt(0),
+          number: parseInt(key.slice(1))
+        }))
+        .sort((a, b) => b.number - a.number); // Sort by section number in descending order
+
+      // Make sure we have at least 3 sections
+      if (warehouseSections.length < 3) return false;
+
+      // Get the warehouse
+      const { data: warehouse } = await supabase
+        .from('warehouses')
+        .select('*')
+        .eq('letter', warehouseLetter)
+        .single();
+
+      if (!warehouse) return false;
+
+      // Get the last three sections (they form a row)
+      const lastThreeSections = warehouseSections.slice(0, 3);
+
+      // Delete all three sections in a single transaction
+      const { error } = await supabase
+        .from('warehouse_sections')
+        .delete()
+        .eq('warehouse_id', warehouse.id)
+        .in('section_number', lastThreeSections.map(s => s.number));
+
+      if (error) throw error;
+
+      // Update button status by removing the three sections
+      const newButtonStatus = { ...buttonStatus };
+      lastThreeSections.forEach(section => {
+        delete newButtonStatus[`${section.letter}${section.number}`];
+      });
+      setButtonStatus(newButtonStatus);
+
+      // Fetch only the updated warehouse
+      const updatedWarehouse = await fetchSingleWarehouse(warehouseLetter);
+      if (updatedWarehouse) {
+        if (updatedWarehouse.type === 'indoor') {
+          setIndoorWarehouses(prev => prev.map(w => 
+            w.letter === warehouseLetter ? updatedWarehouse : w
+          ));
+        } else {
+          setOutdoorWarehouses(prev => prev.map(w => 
+            w.letter === warehouseLetter ? updatedWarehouse : w
+          ));
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error removing row:', error);
+      return false;
+    }
+  };
+
   return {
     indoorWarehouses,
     outdoorWarehouses,
@@ -719,6 +784,7 @@ export function useWarehouses(props?: UseWarehousesProps) {
     updateSectionPosition,
     removeWarehouse,
     removeSection,
+    removeRow,
     downloadWarehouseData,
     removedSections,
     undoSectionRemoval,
@@ -728,7 +794,7 @@ export function useWarehouses(props?: UseWarehousesProps) {
   }
 }
 
-// Add type for the hook's return value
+// Update the type definition
 export type UseWarehousesReturn = {
   indoorWarehouses: Warehouse[];
   outdoorWarehouses: Warehouse[];
@@ -739,10 +805,11 @@ export type UseWarehousesReturn = {
   updateSectionPosition: (warehouseLetter: string, sectionNumber: number, position: { x: number, y: number }) => Promise<boolean>;
   removeWarehouse: (letter: string) => Promise<boolean>;
   removeSection: (warehouseLetter: string, sectionNumber: number) => Promise<boolean>;
+  removeRow: (warehouseLetter: string) => Promise<boolean>;
   downloadWarehouseData: () => void;
   removedSections: RemovedSection[];
   undoSectionRemoval: (section: RemovedSection) => Promise<boolean>;
   addSections: (warehouseLetter: string, numberOfSections: number) => Promise<boolean>;
   clearRemovedSections: () => void;
   sectionPositions: Record<string, { x: number, y: number }>;
-}; 
+};
