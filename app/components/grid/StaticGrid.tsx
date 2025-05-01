@@ -225,19 +225,19 @@ export const StaticGrid: React.FC<StaticGridProps> = ({
         <div className="w-full max-w-lg mx-auto px-4 pt-4">
           <div className="bg-gradient-to-r from-blue-600/60 to-cyan-500/60 dark:from-blue-600/10 dark:to-cyan-500/10 backdrop-blur-sm rounded-lg border border-white/5 overflow-hidden">
             <div className="flex items-center justify-between p-4 relative">
+              <h2 className="text-white/90 text-2xl font-semibold w-full text-center font-[family-name:var(--font-geist-mono)] tracking-tight">
+                {currentWarehouse}
+              </h2>
               {onClose && (
                 <button
                   onClick={onClose}
-                  className="absolute left-4 p-1 hover:bg-white/5 rounded-md transition-colors"
+                  className="absolute right-4 p-1 hover:bg-white/5 rounded-md transition-colors"
                 >
                   <svg className="w-4 h-4 text-white/70" viewBox="0 0 24 24">
                     <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
                   </svg>
                 </button>
               )}
-              <h2 className="text-white/90 text-2xl font-semibold w-full text-center font-[family-name:var(--font-geist-mono)] tracking-tight">
-                {currentWarehouse}
-              </h2>
             </div>
           </div>
         </div>

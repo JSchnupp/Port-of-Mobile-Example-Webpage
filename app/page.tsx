@@ -599,7 +599,7 @@ export default function Home() {
                   <span className="text-gray-800 dark:text-gray-100">
                     {selectedWarehouse && outdoorWarehouses.find(w => w.letter === selectedWarehouse)
                       ? outdoorWarehouses.find(w => w.letter === selectedWarehouse)?.name
-                      : 'Select Warehouse'}
+                      : 'Select Outdoor Space'}
                   </span>
                   <ChevronDownIcon 
                     className={`h-5 w-5 text-gray-600 dark:text-gray-300 transition-transform duration-300 ${

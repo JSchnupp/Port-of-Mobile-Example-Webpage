@@ -87,11 +87,28 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Warehouse Utilization</h2>
+        <h2 className="text-2xl font-bold">Utilization Dashboard</h2>
         <TimeFilter onRangeChange={handleTimeRangeChange} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Current View Card */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Current View
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {currentWarehouse}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {timeRange} view
+            </p>
+          </CardContent>
+        </Card>
+
         {/* Total Sections Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

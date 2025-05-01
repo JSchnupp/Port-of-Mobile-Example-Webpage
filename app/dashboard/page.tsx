@@ -143,8 +143,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex flex-col space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Warehouse Utilization</h2>
+        <div className="flex items-center justify-end">
           <div className="flex items-center gap-4">
             <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
               <SelectTrigger className="w-[300px]">
@@ -208,7 +207,7 @@ export default function DashboardPage() {
 
         <WarehouseDashboard 
           stats={stats}
-          currentWarehouse={selectedWarehouse}
+          currentWarehouse={allWarehouses.find(w => w.letter === selectedWarehouse)?.name || selectedWarehouse}
           colorBlindMode={colorBlindMode}
         />
       </div>
