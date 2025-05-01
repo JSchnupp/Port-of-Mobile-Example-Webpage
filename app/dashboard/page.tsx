@@ -28,6 +28,14 @@ export default function DashboardPage() {
   const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
   const { theme, setTheme } = useTheme();
   const [colorBlindMode, setColorBlindMode] = useState(false);
+  const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
+  const [customDateRange, setCustomDateRange] = useState<{
+    startDate: Date | undefined;
+    endDate: Date | undefined;
+  }>({
+    startDate: undefined,
+    endDate: undefined
+  });
 
   // Filter button status based on selected warehouse
   const filteredButtonStatus = (() => {
@@ -63,14 +71,54 @@ export default function DashboardPage() {
   // Fetch historical data from Supabase
   useEffect(() => {
     const fetchHistoricalData = async () => {
-      // Calculate date range for the past 7 days
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(endDate.getDate() - 6);
+      let startDate: Date;
+      let endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+
+      if (timeRange === "custom" && customDateRange.startDate && customDateRange.endDate) {
+        // Set start date to beginning of selected start date
+        startDate = new Date(customDateRange.startDate);
+        startDate.setHours(0, 0, 0, 0);
+        
+        // Set end date to end of selected end date
+        endDate = new Date(customDateRange.endDate);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        startDate = new Date();
+        // Calculate date range based on selected time range
+        switch (timeRange) {
+          case "day":
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "week":
+            startDate.setDate(endDate.getDate() - 6);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "month":
+            startDate.setMonth(endDate.getMonth() - 1);
+            startDate.setDate(endDate.getDate() + 1);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          case "year":
+            startDate.setFullYear(endDate.getFullYear() - 1);
+            startDate.setDate(endDate.getDate() + 1);
+            startDate.setHours(0, 0, 0, 0);
+            break;
+          default:
+            startDate.setHours(0, 0, 0, 0);
+        }
+      }
 
       // Format dates for Supabase query
       const formattedStartDate = startDate.toISOString().split('T')[0];
       const formattedEndDate = endDate.toISOString().split('T')[0];
+
+      console.log("Fetching data with date range:", {
+        formattedStartDate,
+        formattedEndDate,
+        timeRange,
+        selectedWarehouse
+      });
 
       // Get warehouse ID if a specific warehouse is selected
       const warehouseId = selectedWarehouse === 'all' || selectedWarehouse === 'indoor' || selectedWarehouse === 'outdoor'
@@ -79,20 +127,55 @@ export default function DashboardPage() {
 
       const data = await getDailyUtilization(warehouseId, formattedStartDate, formattedEndDate);
 
-      // Transform the data to match the expected format
-      const transformedData = data.map(record => ({
-        date: new Date(record.date).toLocaleDateString(),
-        utilization: record.utilization_percent
-      }));
+      if (!data || data.length === 0) {
+        console.log("No data received from Supabase");
+        setHistoricalData([]);
+        return;
+      }
 
-      // Sort data by date to ensure chronological order
-      transformedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      // Create a map of existing data points
+      const dataMap = new Map(
+        data.map(record => [record.date, record.utilization_percent])
+      );
 
-      setHistoricalData(transformedData);
+      // Generate all dates in the range
+      const allDates: { date: string; utilization: number }[] = [];
+      const currentDate = new Date(startDate);
+      
+      // Include data points up to and including the end date
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        
+        // Use existing data or interpolate/default to previous value or 0
+        const utilization = dataMap.get(dateStr) ?? 
+          (allDates.length > 0 ? allDates[allDates.length - 1].utilization : 0);
+        
+        allDates.push({
+          date: dateStr,
+          utilization: utilization
+        });
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      console.log("Processed historical data:", allDates);
+      setHistoricalData(allDates);
     };
 
     fetchHistoricalData();
-  }, [selectedWarehouse]);
+  }, [selectedWarehouse, timeRange, customDateRange]);
+
+  const handleTimeRangeChange = (
+    range: "day" | "week" | "month" | "year" | "custom",
+    startDate?: Date,
+    endDate?: Date
+  ) => {
+    console.log("Time range changed:", { range, startDate, endDate });
+    setTimeRange(range);
+    if (range === "custom" && startDate && endDate) {
+      setCustomDateRange({ startDate, endDate });
+    }
+  };
 
   const dashboardStats = {
     totalSections: stats.totalSpace,
@@ -201,12 +284,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <WarehouseDashboard 
+        <WarehouseDashboard
           stats={dashboardStats}
-          currentWarehouse={selectedWarehouse === 'all' 
-            ? 'Total Port Utilization' 
-            : allWarehouses.find(w => w.letter === selectedWarehouse)?.name || selectedWarehouse}
+          currentWarehouse={selectedWarehouse}
           colorBlindMode={colorBlindMode}
+          onTimeRangeChange={handleTimeRangeChange}
         />
       </div>
     </div>

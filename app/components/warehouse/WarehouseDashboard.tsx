@@ -30,6 +30,7 @@ interface WarehouseDashboardProps {
   stats: UtilizationStats;
   currentWarehouse?: string;
   colorBlindMode?: boolean;
+  onTimeRangeChange?: (range: "day" | "week" | "month" | "year" | "custom", startDate?: Date, endDate?: Date) => void;
 }
 
 const CustomProgress = ({ value, colorBlindMode }: { value: number; colorBlindMode?: boolean }) => {
@@ -50,30 +51,33 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
   stats,
   currentWarehouse,
   colorBlindMode = false,
+  onTimeRangeChange,
 }) => {
   const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
   const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
 
   const utilizationPercentage = stats.totalSections > 0
-    ? ((stats.totalSections - stats.availableSections) / stats.totalSections) * 100
+    ? (stats.occupiedSections / stats.totalSections) * 100
     : 0;
 
-  const utilizationText = `${stats.totalSections - stats.availableSections} of ${stats.totalSections} sections utilized`;
+  const utilizationText = `${stats.occupiedSections} of ${stats.totalSections} sections utilized`;
 
   useEffect(() => {
-    // Use the actual utilization data from stats
     if (stats.historicalData) {
+      console.log("Updating historical data in dashboard:", stats.historicalData);
       setHistoricalData(stats.historicalData);
     }
   }, [stats.historicalData]);
 
-  const handleTimeRangeChange = (range: "day" | "week" | "month" | "year" | "custom", start?: Date, end?: Date) => {
+  const handleTimeRangeChange = (
+    range: "day" | "week" | "month" | "year" | "custom",
+    startDate?: Date,
+    endDate?: Date
+  ) => {
+    console.log("Dashboard time range changing:", { range, startDate, endDate });
     setTimeRange(range);
-    if (range === "custom" && start && end) {
-      setStartDate(start);
-      setEndDate(end);
+    if (onTimeRangeChange) {
+      onTimeRangeChange(range, startDate, endDate);
     }
   };
 
@@ -163,16 +167,23 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
-            <LineChart
-              data={historicalData.map(d => ({
-                date: new Date(d.date).toLocaleDateString(),
-                value: d.utilization
-              }))}
-              xAxisKey="date"
-              yAxisKey="value"
-              tooltipFormatter={(value) => `${value.toFixed(1)}% utilization`}
-              colorBlindMode={colorBlindMode}
-            />
+            {historicalData.length > 0 ? (
+              <LineChart
+                data={historicalData.map(d => ({
+                  date: d.date,
+                  value: Number(d.utilization)
+                }))}
+                xAxisKey="date"
+                yAxisKey="value"
+                tooltipFormatter={(value) => `${value.toFixed(1)}% utilization`}
+                colorBlindMode={colorBlindMode}
+                timeRange={timeRange}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                No data available for the selected time range
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
