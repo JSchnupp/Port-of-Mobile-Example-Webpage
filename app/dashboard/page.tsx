@@ -148,7 +148,7 @@ export default function DashboardPage() {
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Overall</SelectLabel>
-                  <SelectItem value="all">Total Port Utilization</SelectItem>
+                  <SelectItem value="all">All Warehouses</SelectItem>
                 </SelectGroup>
                 <SelectSeparator />
                 <SelectGroup>
