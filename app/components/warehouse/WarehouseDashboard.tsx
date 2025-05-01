@@ -119,7 +119,7 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalSections}</div>
             <p className="text-xs text-muted-foreground">
-              Total available sections
+              Total storage sections
             </p>
           </CardContent>
         </Card>

@@ -413,15 +413,15 @@ export default function Home() {
                       data={[
                         { 
                           name: 'Indoor Warehouses', 
-                          value: (100 - indoorPercentage)
+                          value: indoorPercentage
                         },
                         { 
                           name: 'Outdoor Laydown', 
-                          value: (100 - outdoorPercentage)
+                          value: outdoorPercentage
                         },
                         { 
                           name: 'Unused Space', 
-                          value: (indoorPercentage + outdoorPercentage) / 2
+                          value: 100 - calculateTotalPercentage(buttonStatus)
                         }
                       ]}
                       cx="50%"
@@ -439,7 +439,7 @@ export default function Home() {
                         content={({ viewBox }) => {
                           if (!viewBox || !('cx' in viewBox) || !('cy' in viewBox)) return null;
                           const totalUtilization = Math.round(
-                            (200 - (indoorPercentage + outdoorPercentage)) / 2
+                            calculateTotalPercentage(buttonStatus)
                           );
                           return (
                             <>
@@ -477,7 +477,7 @@ export default function Home() {
               <div className="flex justify-around mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <div className="text-center">
                   <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                    {Math.round(100 - indoorPercentage)}%
+                    {Math.round(indoorPercentage)}%
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Indoor Warehouses
@@ -485,7 +485,7 @@ export default function Home() {
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-semibold text-purple-600 dark:text-purple-400">
-                    {Math.round(100 - outdoorPercentage)}%
+                    {Math.round(outdoorPercentage)}%
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Outdoor Laydown
@@ -493,7 +493,7 @@ export default function Home() {
                 </div>
                 <div className="text-center">
                   <div className="text-lg font-semibold text-gray-600 dark:text-gray-400">
-                    {Math.round((indoorPercentage + outdoorPercentage) / 2)}%
+                    {Math.round(100 - calculateTotalPercentage(buttonStatus))}%
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
                     Unused Space
