@@ -2,124 +2,116 @@
 
 import Link from 'next/link';
 import { WarehouseDashboard } from "../components/warehouse/WarehouseDashboard";
-import { WarehouseSelector } from "../components/warehouse/WarehouseSelector";
 import { useWarehouses } from "../hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage } from "../utils/warehouse-utils";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
+} from "@/components/ui/select";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+import { Sun, Moon, Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { indoorWarehouses, outdoorWarehouses, buttonStatus } = useWarehouses();
-  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
-  const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
-  const [startDate, setStartDate] = useState<Date | undefined>();
-  const [endDate, setEndDate] = useState<Date | undefined>();
-
-  const allWarehouses = [...indoorWarehouses, ...outdoorWarehouses];
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>('all');
+  const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
+  const { theme, setTheme } = useTheme();
+  const [colorBlindMode, setColorBlindMode] = useState(false);
 
   // Filter button status based on selected warehouse
-  const filteredButtonStatus = selectedWarehouse === 'all' 
-    ? buttonStatus 
-    : Object.fromEntries(
+  const filteredButtonStatus = (() => {
+    if (selectedWarehouse === 'all') {
+      return buttonStatus;
+    } else if (selectedWarehouse === 'indoor') {
+      // Filter for all indoor warehouses
+      return Object.fromEntries(
+        Object.entries(buttonStatus).filter(([key]) => 
+          indoorWarehouses.some(w => key.startsWith(w.letter))
+        )
+      );
+    } else if (selectedWarehouse === 'outdoor') {
+      // Filter for all outdoor warehouses
+      return Object.fromEntries(
+        Object.entries(buttonStatus).filter(([key]) => 
+          outdoorWarehouses.some(w => key.startsWith(w.letter))
+        )
+      );
+    } else {
+      // Filter for specific warehouse
+      return Object.fromEntries(
         Object.entries(buttonStatus).filter(([key]) => key.startsWith(selectedWarehouse))
       );
+    }
+  })();
 
   // Calculate actual utilization stats
   const totalSections = Object.keys(filteredButtonStatus).length;
   const occupiedSections = Object.values(filteredButtonStatus).filter(status => status === 'green').length;
-  const availableSections = totalSections - occupiedSections;
+  const availableSections = Object.values(filteredButtonStatus).filter(status => status === 'red').length;
 
   // Calculate percentages
   const totalPercentage = calculateTotalPercentage(filteredButtonStatus);
   const indoorPercentage = calculateIndoorPercentage(filteredButtonStatus, indoorWarehouses.map(w => w.letter));
   const outdoorPercentage = calculateOutdoorPercentage(filteredButtonStatus, outdoorWarehouses.map(w => w.letter));
 
-  // Generate historical data based on time range
-  const generateHistoricalData = (range: "day" | "week" | "month" | "year" | "custom"): Array<{ date: string; utilization: number }> => {
-    const data: Array<{ date: string; utilization: number }> = [];
-    const now = new Date();
+  // Generate historical data based on the actual warehouse data
+  const generateHistoricalData = () => {
+    const data = [];
+    const today = new Date();
     
-    switch (range) {
-      case "day":
-        // Generate hourly data for the last 24 hours
-        for (let i = 23; i >= 0; i--) {
-          const date = new Date(now);
-          date.setHours(now.getHours() - i);
-          data.push({
-            date: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            utilization: Math.random() * 100
-          });
+    // Generate data for the past 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      
+      let dayUtilization = 0;
+      if (selectedWarehouse === "all") {
+        // For "all", use the overall utilization
+        dayUtilization = totalPercentage;
+      } else if (selectedWarehouse === "indoor") {
+        // For indoor warehouses
+        dayUtilization = indoorPercentage;
+      } else if (selectedWarehouse === "outdoor") {
+        // For outdoor warehouses
+        dayUtilization = outdoorPercentage;
+      } else {
+        // For a specific warehouse
+        const warehouseSections = Object.entries(buttonStatus)
+          .filter(([key]) => key.startsWith(selectedWarehouse));
+        if (warehouseSections.length > 0) {
+          const greenSections = warehouseSections.filter(([, status]) => status === 'green').length;
+          dayUtilization = (greenSections / warehouseSections.length) * 100;
         }
-        break;
-        
-      case "week":
-        // Generate daily data for the current week up to today
-        const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-        for (let i = currentDay; i >= 0; i--) {
-          const date = new Date(now);
-          date.setDate(now.getDate() - i);
-          data.push({
-            date: date.toLocaleDateString([], { weekday: 'short' }),
-            utilization: Math.random() * 100
-          });
-        }
-        break;
-        
-      case "month":
-        // Generate weekly data for the current month up to current week
-        const currentDate = now.getDate();
-        const currentWeek = Math.ceil(currentDate / 7);
-        for (let i = currentWeek; i >= 1; i--) {
-          const date = new Date(now);
-          date.setDate(now.getDate() - ((currentWeek - i) * 7));
-          data.push({
-            date: `Week ${i}`,
-            utilization: Math.random() * 100
-          });
-        }
-        break;
-        
-      case "year":
-        // Generate monthly data for the current year up to current month
-        const currentMonth = now.getMonth(); // 0 = January, 1 = February, etc.
-        for (let i = currentMonth; i >= 0; i--) {
-          const date = new Date(now);
-          date.setMonth(i);
-          data.push({
-            date: date.toLocaleDateString([], { month: 'short' }),
-            utilization: Math.random() * 100
-          });
-        }
-        break;
-        
-      case "custom":
-        // For custom range, return existing data if available
-        if (stats.historicalData) {
-          return stats.historicalData;
-        }
-        break;
+      }
+      
+      // Add minimal random variation (±2%) to make the graph more realistic
+      const variation = (Math.random() - 0.5) * 4;
+      const historicalUtilization = Math.max(0, Math.min(100, dayUtilization + variation));
+      
+      data.push({
+        date: date.toISOString(),
+        utilization: historicalUtilization
+      });
     }
     
     return data;
   };
 
-  const handleTimeRangeChange = (range: "day" | "week" | "month" | "year" | "custom", start?: Date, end?: Date) => {
-    setTimeRange(range);
-    if (range === "custom" && start && end) {
-      setStartDate(start);
-      setEndDate(end);
-    }
-  };
+  // Update historical data when dependencies change
+  useEffect(() => {
+    setHistoricalData(generateHistoricalData());
+  }, [selectedWarehouse, buttonStatus, totalPercentage, indoorPercentage, outdoorPercentage]);
 
-  const stats: {
-    totalSections: number;
-    occupiedSections: number;
-    availableSections: number;
-    statusBreakdown: {
-      green: number;
-      red: number;
-    };
-    historicalData: Array<{ date: string; utilization: number }>;
-  } = {
+  const stats = {
     totalSections,
     occupiedSections,
     availableSections,
@@ -127,8 +119,17 @@ export default function DashboardPage() {
       green: occupiedSections,
       red: availableSections,
     },
-    historicalData: generateHistoricalData(timeRange)
+    historicalData
   };
+
+  // Combine indoor and outdoor warehouses for the dropdown
+  const allWarehouses = [
+    { letter: "all", name: "All Warehouses", type: 'all' as const },
+    { letter: "indoor", name: "All Indoor Warehouses", type: 'indoor' as const },
+    { letter: "outdoor", name: "All Outdoor Warehouses", type: 'outdoor' as const },
+    ...indoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'indoor' as const })),
+    ...outdoorWarehouses.map(w => ({ letter: w.letter, name: w.name, type: 'outdoor' as const }))
+  ];
 
   return (
     <div className="container mx-auto p-4">
@@ -154,13 +155,77 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <WarehouseDashboard 
-        stats={stats}
-        currentWarehouse={selectedWarehouse === 'all' ? 'All Warehouses' : allWarehouses.find(w => w.letter === selectedWarehouse)?.name}
-        warehouses={allWarehouses}
-        onWarehouseChange={setSelectedWarehouse}
-        onTimeRangeChange={handleTimeRangeChange}
-      />
+      <div className="flex flex-col space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Warehouse Utilization</h2>
+          <div className="flex items-center gap-4">
+            <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
+              <SelectTrigger className="w-[300px]">
+                <SelectValue placeholder="Select warehouse" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Overall</SelectLabel>
+                  <SelectItem value="all">All Warehouses</SelectItem>
+                </SelectGroup>
+                <SelectSeparator />
+                <SelectGroup>
+                  <SelectLabel>Indoor Warehouses</SelectLabel>
+                  <SelectItem value="indoor">All Indoor Warehouses</SelectItem>
+                  {indoorWarehouses.map((warehouse) => (
+                    <SelectItem key={warehouse.letter} value={warehouse.letter}>
+                      {warehouse.name} ({warehouse.letter})
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+                <SelectSeparator />
+                <SelectGroup>
+                  <SelectLabel>Outdoor Warehouses</SelectLabel>
+                  <SelectItem value="outdoor">All Outdoor Warehouses</SelectItem>
+                  {outdoorWarehouses.map((warehouse) => (
+                    <SelectItem key={warehouse.letter} value={warehouse.letter}>
+                      {warehouse.name} ({warehouse.letter})
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="h-9 w-9"
+              >
+                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setColorBlindMode(!colorBlindMode)}
+                className={cn(
+                  "h-9 w-9",
+                  colorBlindMode && "bg-blue-100 dark:bg-blue-900"
+                )}
+              >
+                <Eye className="h-4 w-4" />
+                <span className="sr-only">Toggle color blind mode</span>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <WarehouseDashboard 
+          stats={stats}
+          currentWarehouse={selectedWarehouse}
+          colorBlindMode={colorBlindMode}
+          warehouses={allWarehouses}
+        />
+      </div>
     </div>
   );
 } 

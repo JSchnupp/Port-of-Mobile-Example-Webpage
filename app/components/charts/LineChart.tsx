@@ -16,18 +16,23 @@ interface ChartData {
 }
 
 interface LineChartProps {
-  data: ChartData[];
+  data: Array<{
+    date: string;
+    value: number;
+  }>;
   xAxisKey: string;
   yAxisKey: string;
   tooltipFormatter?: (value: number) => string;
+  colorBlindMode?: boolean;
 }
 
-export function LineChart({
+export const LineChart: React.FC<LineChartProps> = ({
   data,
   xAxisKey,
   yAxisKey,
   tooltipFormatter = (value) => value.toString(),
-}: LineChartProps) {
+  colorBlindMode = false,
+}) => {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <RechartsLineChart
@@ -52,10 +57,11 @@ export function LineChart({
         />
         <YAxis
           tick={{ fontSize: 12 }}
-          tickFormatter={(value) => `${value}%`}
+          tickFormatter={(value) => `${Math.round(value)}%`}
+          domain={[0, 100]}
         />
         <Tooltip
-          formatter={(value: number) => tooltipFormatter(value)}
+          formatter={(value) => tooltipFormatter(Math.round(value as number))}
           labelFormatter={(label) => {
             if (typeof label === "string") {
               return label;
@@ -66,7 +72,7 @@ export function LineChart({
         <Line
           type="monotone"
           dataKey={yAxisKey}
-          stroke="#2563eb"
+          stroke={colorBlindMode ? "#2563eb" : "#22c55e"}
           strokeWidth={2}
           dot={false}
           activeDot={{ r: 8 }}
@@ -74,4 +80,4 @@ export function LineChart({
       </RechartsLineChart>
     </ResponsiveContainer>
   );
-} 
+}; 
