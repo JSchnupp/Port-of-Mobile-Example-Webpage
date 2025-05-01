@@ -35,15 +35,15 @@ export function WarehouseSelector({ warehouses, onWarehouseChange }: WarehouseSe
   const outdoorWarehouses = warehouses.filter(w => w.type === 'outdoor')
 
   return (
-    <div className="w-[300px]">
+    <div className="w-full">
       <Select value={selectedWarehouse} onValueChange={handleWarehouseChange}>
-        <SelectTrigger>
+        <SelectTrigger className="w-full">
           <SelectValue placeholder="Select warehouse" />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
             <SelectLabel>Overall</SelectLabel>
-            <SelectItem value="all">All Warehouses</SelectItem>
+            <SelectItem value="all">Total Port Utilization</SelectItem>
           </SelectGroup>
           <SelectSeparator />
           <SelectGroup>

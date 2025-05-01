@@ -10,7 +10,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import { TouchBackend } from 'react-dnd-touch-backend'
 import { WarehouseItem } from "./components/warehouse/WarehouseItem";
 import { WarehouseForm } from "./components/forms/WarehouseForm";
-import { DraggableGrid } from "./components/grid/DraggableGrid";
+import { StaticGrid } from "./components/grid/StaticGrid";
 import { AddSpaceForm } from "./components/forms/AddSpaceForm";
 import { useWarehouses, type UseWarehousesReturn } from "./hooks/useWarehouses";
 import { calculateTotalPercentage, calculateIndoorPercentage, calculateOutdoorPercentage, statusColors } from "./utils/warehouse-utils";
@@ -89,6 +89,7 @@ export default function Home() {
     createWarehouse,
     addSections,
     removeWarehouse,
+    removeRow,
   } = warehouseData;
 
   const { theme, setTheme } = useTheme()
@@ -149,6 +150,37 @@ export default function Home() {
       console.error('Error adding sections:', error);
     } finally {
       setAddingSections(false);
+    }
+  };
+
+  const handleAddColumn = async () => {
+    if (!selectedWarehouse) return;
+    
+    try {
+      await addSections(selectedWarehouse, 6); // Add 6 sections (one column)
+    } catch (error) {
+      console.error('Error adding column:', error);
+    }
+  };
+
+  const handleAddRow = async () => {
+    if (!selectedWarehouse) return;
+    
+    try {
+      // Add exactly 3 sections (one row)
+      await addSections(selectedWarehouse, 3);
+    } catch (error) {
+      console.error('Error adding row:', error);
+    }
+  };
+
+  const handleDeleteRow = async () => {
+    if (!selectedWarehouse) return;
+    
+    try {
+      await removeRow(selectedWarehouse);
+    } catch (error) {
+      console.error('Error deleting row:', error);
     }
   };
 
@@ -288,36 +320,36 @@ export default function Home() {
   return (
     <DndProvider backend={backend}>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Theme toggle and color blind mode buttons */}
+        {/* Theme toggle and color blind mode buttons */}
         <div className="fixed top-6 right-6 flex flex-col gap-3 z-50">
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-3 rounded-xl bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 shadow-lg backdrop-blur-sm"
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? (
-              <SunIcon className="h-6 w-6 text-amber-500" />
-          ) : (
-            <MoonIcon className="h-6 w-6 text-gray-700" />
-          )}
-        </button>
-        
-        <button
-          onClick={() => setColorBlindMode(!colorBlindMode)}
-            className={`p-3 rounded-xl transition-all duration-300 shadow-lg backdrop-blur-sm ${
-            colorBlindMode 
-              ? 'bg-purple-500 hover:bg-purple-600 text-white' 
-                : 'bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200'
-          }`}
-          aria-label="Toggle color blind mode"
-        >
-          {colorBlindMode ? (
-            <EyeSlashIcon className="h-6 w-6" />
-          ) : (
-            <EyeIcon className="h-6 w-6" />
-          )}
-        </button>
-      </div>
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-3 rounded-xl bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 transition-all duration-300 shadow-lg backdrop-blur-sm"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? (
+                <SunIcon className="h-6 w-6 text-amber-500" />
+            ) : (
+              <MoonIcon className="h-6 w-6 text-gray-700" />
+            )}
+          </button>
+          
+          <button
+            onClick={() => setColorBlindMode(!colorBlindMode)}
+              className={`p-3 rounded-xl transition-all duration-300 shadow-lg backdrop-blur-sm ${
+              colorBlindMode 
+                ? 'bg-purple-500 hover:bg-purple-600 text-white' 
+                  : 'bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200'
+            }`}
+            aria-label="Toggle color blind mode"
+          >
+            {colorBlindMode ? (
+              <EyeSlashIcon className="h-6 w-6" />
+            ) : (
+              <EyeIcon className="h-6 w-6" />
+            )}
+          </button>
+        </div>
 
         <div className="container mx-auto px-4 py-8 min-h-screen flex flex-col items-center">
           {/* Header Section */}
@@ -351,7 +383,7 @@ export default function Home() {
         </div>
 
           {/* Utilization Stats and Pie Chart */}
-          <div className="w-full max-w-6xl mb-12">
+          <div className="w-full max-w-6xl mb-8">
             <div className="bg-white/90 dark:bg-gray-800/90 p-8 rounded-2xl shadow-xl backdrop-blur-sm">
               <h3 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100">Port Utilization</h3>
               <div className="h-72">
@@ -376,7 +408,7 @@ export default function Home() {
                       cy="50%"
                       labelLine={false}
                       outerRadius={100}
-            innerRadius={60}
+                      innerRadius={60}
                       fill="#8884d8"
                       dataKey="value"
                     >
@@ -447,9 +479,9 @@ export default function Home() {
                     Unused Space
                   </div>
                 </div>
-                </div>
               </div>
-        </div>
+            </div>
+          </div>
 
           {/* Warehouse Selection */}
           <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 gap-8 mb-12">
@@ -512,15 +544,15 @@ export default function Home() {
                         </svg>
                         {isRemovingIndoor ? 'Done' : 'Remove'}
                       </button>
-                </div>
-
-                {/* Divider */}
-                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                
-                {/* Warehouse List */}
-                {indoorWarehouses.map((warehouse) => (
-                  <div key={warehouse.letter} className="group relative">
-            <button
+                    </div>
+                    
+                    {/* Divider */}
+                    <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                    
+                    {/* Warehouse List */}
+                    {indoorWarehouses.map((warehouse) => (
+                      <div key={warehouse.letter} className="group relative">
+                        <button
                           onClick={() => {
                             if (!isRemovingIndoor) {
                               handleWarehouseClick(warehouse.letter);
@@ -543,17 +575,17 @@ export default function Home() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           )}
-            </button>
-                </div>
-                ))}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
 
             {/* Outdoor Warehouses Dropdown */}
             <div className="bg-white/90 dark:bg-gray-800/90 p-8 rounded-2xl shadow-xl backdrop-blur-sm relative z-[60]">
-              <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100 text-center">Outdoor Warehouses</h2>
+              <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-100 text-center">Outdoor Laydown Spaces</h2>
               <div className="relative dropdown-container">
                 <button
                   onClick={() => {
@@ -580,7 +612,7 @@ export default function Home() {
                   <div className="absolute z-[65] w-full mt-2 py-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700">
                     {/* Management Options */}
                     <div className="px-6 py-3 flex gap-2">
-              <button
+                      <button
                         onClick={() => {
                           setShowAddWarehouseModal({ type: 'outdoor' });
                           setShowOutdoorDropdown(false);
@@ -607,10 +639,10 @@ export default function Home() {
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+                        </svg>
                         {isRemovingOutdoor ? 'Done' : 'Remove'}
-              </button>
-            </div>
+                      </button>
+                    </div>
                     
                     {/* Divider */}
                     <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
@@ -618,7 +650,7 @@ export default function Home() {
                     {/* Warehouse List */}
                     {outdoorWarehouses.map((warehouse) => (
                       <div key={warehouse.letter} className="group relative">
-                      <button
+                        <button
                           onClick={() => {
                             if (!isRemovingOutdoor) {
                               handleWarehouseClick(warehouse.letter);
@@ -640,13 +672,13 @@ export default function Home() {
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
-                        )}
-                      </button>
+                          )}
+                        </button>
                       </div>
                     ))}
                   </div>
                 )}
-                    </div>
+              </div>
             </div>
           </div>
 
@@ -654,7 +686,7 @@ export default function Home() {
           {selectedWarehouse && (
             <div className="w-full max-w-6xl">
               <div className="bg-white/90 dark:bg-gray-800/90 p-8 rounded-2xl shadow-xl backdrop-blur-sm">
-                <DraggableGrid
+                <StaticGrid
                   sections={Object.entries(buttonStatus)
                     .filter(([key]) => key.startsWith(selectedWarehouse))
                     .map(([key, status]) => ({
@@ -663,30 +695,25 @@ export default function Home() {
                       sectionNumber: key.slice(1),
                       position: sectionPositions[key],
                     }))}
-                  onSectionMove={(sectionId, position) => {
-                    console.log('Section moved:', sectionId, position);
-                  }}
                   onStatusChange={async (sectionId, status) => {
                     const warehouseLetter = sectionId.charAt(0);
                     const sectionNumber = parseInt(sectionId.slice(1));
                     await updateSectionStatus(warehouseLetter, sectionNumber, status);
                   }}
-                  onSectionDelete={(sectionId) => {
+                  onDeleteSection={async (sectionId) => {
                     const warehouseLetter = sectionId.charAt(0);
                     const sectionNumber = parseInt(sectionId.slice(1));
-                    removeSection(warehouseLetter, sectionNumber);
+                    await removeSection(warehouseLetter, sectionNumber);
                   }}
-                  onSectionPositionUpdate={async (warehouseLetter, sectionNumber, position) => {
-                    return await updateSectionPosition(warehouseLetter, sectionNumber, position);
-                  }}
+                  onDeleteRow={handleDeleteRow}
                   currentWarehouse={[...indoorWarehouses, ...outdoorWarehouses].find(w => w.letter === selectedWarehouse)?.name}
-                  onAddSections={() => setShowAddSectionsModal(true)}
                   onClose={() => setSelectedWarehouse(null)}
                   colorBlindMode={colorBlindMode}
-            />
-          </div>
-          </div>
-        )}
+                  onAddSections={handleAddRow}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Modals */}
         {showDeleteConfirm.type && (

@@ -636,7 +636,11 @@ export function useWarehouses(props?: UseWarehousesProps) {
     try {
       console.log('Starting to add sections:', { warehouseLetter, numberOfSections });
       
-      // Initialize the new sections with provided options or defaults
+      // Input validation
+      if (!warehouseLetter || numberOfSections < 1) {
+        throw new Error('Invalid input: Warehouse letter and positive number of sections required');
+      }
+
       // Get the current warehouse
       const { data: warehouse, error: warehouseError } = await supabase
         .from('warehouses')
@@ -669,21 +673,28 @@ export function useWarehouses(props?: UseWarehousesProps) {
           warehouse_id: warehouse.id,
           warehouse_name: warehouse.name,
           section_number: highestSectionNumber + i + 1,
-          status: 'green' as WarehouseStatus
+          status: 'green' as WarehouseStatus,
+          position_x: 0,
+          position_y: 0
         })
       );
 
       console.log('Attempting to insert sections:', sectionsToInsert);
 
       // Insert new sections
-      const { error: sectionsError } = await supabase
+      const { data: insertedSections, error: sectionsError } = await supabase
         .from('warehouse_sections')
-        .insert(sectionsToInsert);
+        .insert(sectionsToInsert)
+        .select();
 
       if (sectionsError) {
         console.error('Error inserting sections:', sectionsError);
         console.error('Error details:', JSON.stringify(sectionsError, null, 2));
         throw new Error(`Failed to insert sections: ${sectionsError.message}`);
+      }
+
+      if (!insertedSections) {
+        throw new Error('No sections were inserted');
       }
 
       // Update button status
@@ -693,7 +704,21 @@ export function useWarehouses(props?: UseWarehousesProps) {
       });
       setButtonStatus(newButtonStatus);
 
-      // Refresh warehouse data to get updated last_modified
+      // Update warehouse sections count and last_modified
+      const { error: updateError } = await supabase
+        .from('warehouses')
+        .update({ 
+          last_modified: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', warehouse.id);
+
+      if (updateError) {
+        console.error('Error updating warehouse:', updateError);
+        console.error('Error details:', JSON.stringify(updateError, null, 2));
+      }
+
+      // Refresh warehouse data
       await fetchWarehouses();
       return true;
     } catch (error) {
@@ -709,6 +734,71 @@ export function useWarehouses(props?: UseWarehousesProps) {
     setRemovedSections([]);
   };
 
+  const removeRow = async (warehouseLetter: string) => {
+    if (!supabase) return false;
+    
+    try {
+      // Get all sections for this warehouse
+      const warehouseSections = Object.entries(buttonStatus)
+        .filter(([key]) => key.startsWith(warehouseLetter))
+        .map(([key]) => ({
+          letter: key.charAt(0),
+          number: parseInt(key.slice(1))
+        }))
+        .sort((a, b) => b.number - a.number); // Sort by section number in descending order
+
+      // Make sure we have at least 3 sections
+      if (warehouseSections.length < 3) return false;
+
+      // Get the warehouse
+      const { data: warehouse } = await supabase
+        .from('warehouses')
+        .select('*')
+        .eq('letter', warehouseLetter)
+        .single();
+
+      if (!warehouse) return false;
+
+      // Get the last three sections (they form a row)
+      const lastThreeSections = warehouseSections.slice(0, 3);
+
+      // Delete all three sections in a single transaction
+      const { error } = await supabase
+        .from('warehouse_sections')
+        .delete()
+        .eq('warehouse_id', warehouse.id)
+        .in('section_number', lastThreeSections.map(s => s.number));
+
+      if (error) throw error;
+
+      // Update button status by removing the three sections
+      const newButtonStatus = { ...buttonStatus };
+      lastThreeSections.forEach(section => {
+        delete newButtonStatus[`${section.letter}${section.number}`];
+      });
+      setButtonStatus(newButtonStatus);
+
+      // Fetch only the updated warehouse
+      const updatedWarehouse = await fetchSingleWarehouse(warehouseLetter);
+      if (updatedWarehouse) {
+        if (updatedWarehouse.type === 'indoor') {
+          setIndoorWarehouses(prev => prev.map(w => 
+            w.letter === warehouseLetter ? updatedWarehouse : w
+          ));
+        } else {
+          setOutdoorWarehouses(prev => prev.map(w => 
+            w.letter === warehouseLetter ? updatedWarehouse : w
+          ));
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error removing row:', error);
+      return false;
+    }
+  };
+
   return {
     indoorWarehouses,
     outdoorWarehouses,
@@ -719,6 +809,7 @@ export function useWarehouses(props?: UseWarehousesProps) {
     updateSectionPosition,
     removeWarehouse,
     removeSection,
+    removeRow,
     downloadWarehouseData,
     removedSections,
     undoSectionRemoval,
@@ -728,7 +819,7 @@ export function useWarehouses(props?: UseWarehousesProps) {
   }
 }
 
-// Add type for the hook's return value
+// Update the type definition
 export type UseWarehousesReturn = {
   indoorWarehouses: Warehouse[];
   outdoorWarehouses: Warehouse[];
@@ -739,10 +830,11 @@ export type UseWarehousesReturn = {
   updateSectionPosition: (warehouseLetter: string, sectionNumber: number, position: { x: number, y: number }) => Promise<boolean>;
   removeWarehouse: (letter: string) => Promise<boolean>;
   removeSection: (warehouseLetter: string, sectionNumber: number) => Promise<boolean>;
+  removeRow: (warehouseLetter: string) => Promise<boolean>;
   downloadWarehouseData: () => void;
   removedSections: RemovedSection[];
   undoSectionRemoval: (section: RemovedSection) => Promise<boolean>;
   addSections: (warehouseLetter: string, numberOfSections: number) => Promise<boolean>;
   clearRemovedSections: () => void;
   sectionPositions: Record<string, { x: number, y: number }>;
-}; 
+};

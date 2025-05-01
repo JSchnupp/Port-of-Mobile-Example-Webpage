@@ -68,8 +68,7 @@ export const LineChart: React.FC<LineChartProps> = ({
         />
         <YAxis
           tick={{ fontSize: 12 }}
-          tickFormatter={(value) => `${Math.round(value)}%`}
-          domain={[0, 100]}
+          tickFormatter={(value) => `${value}%`}
         />
         <Tooltip
           formatter={(value) => tooltipFormatter(Math.round(value as number))}
