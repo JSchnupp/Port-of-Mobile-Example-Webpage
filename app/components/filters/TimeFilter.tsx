@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 
-type TimeRange = "day" | "week" | "month" | "year" | "custom";
+type TimeRange = "week" | "month" | "year" | "custom";
 
 interface TimeFilterProps {
   onRangeChange: (range: TimeRange, startDate?: Date, endDate?: Date) => void;
@@ -67,12 +67,6 @@ export const TimeFilter: React.FC<TimeFilterProps> = ({ onRangeChange }) => {
 
   return (
     <div className="flex items-center gap-2">
-      <Button
-        variant={selectedRange === "day" ? "default" : "outline"}
-        onClick={() => handleRangeSelect("day")}
-      >
-        Day
-      </Button>
       <Button
         variant={selectedRange === "week" ? "default" : "outline"}
         onClick={() => handleRangeSelect("week")}

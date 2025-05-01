@@ -30,7 +30,7 @@ interface WarehouseDashboardProps {
   stats: UtilizationStats;
   currentWarehouse?: string;
   colorBlindMode?: boolean;
-  onTimeRangeChange?: (range: "day" | "week" | "month" | "year" | "custom", startDate?: Date, endDate?: Date) => void;
+  onTimeRangeChange?: (range: "week" | "month" | "year" | "custom", startDate?: Date, endDate?: Date) => void;
 }
 
 const CustomProgress = ({ value, colorBlindMode }: { value: number; colorBlindMode?: boolean }) => {

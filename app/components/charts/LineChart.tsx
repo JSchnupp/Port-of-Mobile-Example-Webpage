@@ -40,12 +40,6 @@ export const LineChart: React.FC<LineChartProps> = ({
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     switch (timeRange) {
-      case "day":
-        return d.toLocaleTimeString([], { 
-          hour: '2-digit', 
-          minute: '2-digit',
-          hour12: true 
-        });
       case "week":
         return d.toLocaleDateString([], { 
           weekday: 'short',

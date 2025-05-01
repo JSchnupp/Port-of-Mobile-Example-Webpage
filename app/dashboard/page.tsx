@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
   const { theme, setTheme } = useTheme();
   const [colorBlindMode, setColorBlindMode] = useState(false);
-  const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
+  const [timeRange, setTimeRange] = useState<"week" | "month" | "year" | "custom">("week");
   const [customDateRange, setCustomDateRange] = useState<{
     startDate: Date | undefined;
     endDate: Date | undefined;
@@ -87,9 +87,6 @@ export default function DashboardPage() {
         startDate = new Date();
         // Calculate date range based on selected time range
         switch (timeRange) {
-          case "day":
-            startDate.setHours(0, 0, 0, 0);
-            break;
           case "week":
             startDate.setDate(endDate.getDate() - 6);
             startDate.setHours(0, 0, 0, 0);
@@ -166,7 +163,7 @@ export default function DashboardPage() {
   }, [selectedWarehouse, timeRange, customDateRange]);
 
   const handleTimeRangeChange = (
-    range: "day" | "week" | "month" | "year" | "custom",
+    range: "week" | "month" | "year" | "custom",
     startDate?: Date,
     endDate?: Date
   ) => {
