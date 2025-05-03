@@ -1,3 +1,9 @@
+/**
+ * Main Page Component
+ * This is the primary dashboard view for the warehouse management system.
+ * It handles warehouse visualization, section management, and utilization tracking.
+ */
+
 "use client";
 import { useState, useEffect } from "react";
 import { useTheme } from 'next-themes'
@@ -36,16 +42,28 @@ import { cn } from "./lib/utils";
 import { calculateUtilizationStats, calculateIndoorUtilization, calculateOutdoorUtilization } from '../lib/warehouse-calculations';
 import { UndoNotification } from './components/ui/undo-notification';
 
+/**
+ * Interface for a warehouse section
+ * Represents a single section within a warehouse with its status and identification number
+ */
 interface WarehouseSection {
   status: WarehouseStatus;
   number: string;
 }
 
+/**
+ * Interface for a warehouse
+ * Represents a warehouse with its letter designation and associated sections
+ */
 interface Warehouse {
   letter: string;
   sections: WarehouseSection[];
 }
 
+/**
+ * Extended warehouse interface with additional properties
+ * Includes name and modification timestamps
+ */
 interface WarehouseWithSections extends Warehouse {
   sections: Array<{
     status: WarehouseStatus;
@@ -60,7 +78,13 @@ interface Warehouse {
   updated_at?: string;
 }
 
+/**
+ * Main Home Component
+ * This is the primary dashboard component that manages warehouse visualization and interactions.
+ * It handles warehouse selection, section management, and utilization tracking.
+ */
 export default function Home() {
+  // State management for warehouse selection and UI controls
   const [selectedWarehouse, setSelectedWarehouse] = useState<string | null>(null);
   const [showAddSectionsModal, setShowAddSectionsModal] = useState(false);
   const [newSectionsCount, setNewSectionsCount] = useState(1);
@@ -85,6 +109,7 @@ export default function Home() {
     sectionNumber?: number;
   } | null>(null);
   
+  // Fetch warehouse data using custom hook
   const warehouseData = useWarehouses() as unknown as UseWarehousesReturn;
   const {
     indoorWarehouses,
@@ -102,8 +127,13 @@ export default function Home() {
     undoSectionRemoval
   } = warehouseData;
 
+  // Theme management
   const { theme, setTheme } = useTheme()
 
+  /**
+   * Effect hook to detect mobile devices and handle window resizing
+   * Sets up event listeners for window resize and touch detection
+   */
   useEffect(() => {
     const isTouchDevice = () => {
       if (typeof window === 'undefined') return false;
@@ -122,9 +152,13 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Select appropriate drag and drop backend based on device type
   const backend = isMobile ? TouchBackend : HTML5Backend;
 
-  // Add click outside handler
+  /**
+   * Effect hook to handle clicks outside dropdown menus
+   * Closes dropdowns when clicking outside their container
+   */
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -138,16 +172,29 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  /**
+   * Handles warehouse selection
+   * @param {string} warehouse - The letter identifier of the selected warehouse
+   */
   const handleWarehouseClick = (warehouse: string) => {
     setSelectedWarehouse(warehouse);
   };
 
+  /**
+   * Toggles section status between green and red
+   * @param {string} warehouseLetter - The warehouse identifier
+   * @param {number} sectionNumber - The section number to update
+   */
   const handleButtonClick = async (warehouseLetter: string, sectionNumber: number) => {
     const currentStatus = buttonStatus[`${warehouseLetter}${sectionNumber}`];
     const newStatus = currentStatus === 'green' ? 'red' : 'green';
     await updateSectionStatus(warehouseLetter, sectionNumber, newStatus);
   };
 
+  /**
+   * Adds new sections to the selected warehouse
+   * Validates input and handles the addition process
+   */
   const handleAddSections = async () => {
     if (!selectedWarehouse || newSectionsCount < 1) return;
     
@@ -163,6 +210,10 @@ export default function Home() {
     }
   };
 
+  /**
+   * Adds a new column of sections to the warehouse
+   * Each column consists of 6 sections
+   */
   const handleAddColumn = async () => {
     if (!selectedWarehouse) return;
     
@@ -173,6 +224,10 @@ export default function Home() {
     }
   };
 
+  /**
+   * Adds a new row of sections to the warehouse
+   * Each row consists of 3 sections
+   */
   const handleAddRow = async () => {
     if (!selectedWarehouse) return;
     
@@ -184,6 +239,10 @@ export default function Home() {
     }
   };
 
+  /**
+   * Removes a row from the warehouse
+   * Shows an undo notification after removal
+   */
   const handleDeleteRow = async () => {
     if (!selectedWarehouse) return;
     
@@ -197,12 +256,16 @@ export default function Home() {
     setShowUndoNotification(true);
   };
 
-  // Calculate percentages using the utility functions
+  // Calculate warehouse utilization statistics
   const stats = calculateUtilizationStats(buttonStatus);
   const indoorStats = calculateIndoorUtilization(buttonStatus, indoorWarehouses.map(w => w.letter));
   const outdoorStats = calculateOutdoorUtilization(buttonStatus, outdoorWarehouses.map(w => w.letter));
 
-  // Custom tooltip formatter for the pie chart
+  /**
+   * Formats tooltip values for the utilization pie chart
+   * @param {number | string | Array<number | string>} value - The value to format
+   * @returns {string} Formatted tooltip text
+   */
   const tooltipFormatter = (
     value: number | string | Array<number | string>
   ) => {
@@ -212,6 +275,11 @@ export default function Home() {
     return `${value}% Utilization`;
   };
 
+  /**
+   * Calculates utilization percentage for a specific warehouse
+   * @param {string} letter - The warehouse identifier
+   * @returns {number} The utilization percentage (0-100)
+   */
   const calculateUtilization = (letter: string) => {
     type UtilizationValue = 0 | 100;
     const sections = Object.entries(buttonStatus)
@@ -233,12 +301,17 @@ export default function Home() {
     return Math.round(total / sections.length);
   }
   
-  // Define status colors with proper typing
+  // Define status colors for warehouse sections
   const statusColors: Record<WarehouseStatus, { color: string; percentage: string }> = {
     green: { color: 'bg-green-500 hover:bg-green-600', percentage: '100%' },
     red: { color: 'bg-red-500 hover:bg-red-600', percentage: '0%' }
   };
 
+  /**
+   * Removes a section from a warehouse
+   * @param {string} warehouseLetter - The warehouse identifier
+   * @param {number} sectionNumber - The section number to remove
+   */
   const handleRemoveSection = async (warehouseLetter: string, sectionNumber: number) => {
     if (confirm(`Are you sure you want to remove Section ${String.fromCharCode(64 + sectionNumber)}?`)) {
       // Clear any existing timeout
@@ -263,6 +336,10 @@ export default function Home() {
     }
   };
 
+  /**
+   * Handles the undo action for a removed section
+   * @param {Object} section - The section to restore
+   */
   const handleUndoClick = (section: (typeof removedSections)[0]) => {
     if (undoTimeout) {
       clearTimeout(undoTimeout);
@@ -276,11 +353,18 @@ export default function Home() {
     });
   };
 
+  /**
+   * Clears the list of removed sections and resets the undo timeout
+   */
   const clearRemovedSections = () => {
     setRemovedSections([]);
     setUndoTimeout(null);
   };
 
+  /**
+   * Toggles the selection of a warehouse for deletion
+   * @param {string} letter - The warehouse identifier
+   */
   const toggleWarehouseSelection = (letter: string) => {
     setWarehousesToDelete(prev => {
       const newSet = new Set(prev);
@@ -293,12 +377,20 @@ export default function Home() {
     });
   };
 
+  /**
+   * Initiates the warehouse removal process
+   * Shows the final confirmation dialog if warehouses are selected
+   */
   const handleRemoveSelectedWarehouses = () => {
     if (warehousesToDelete.size > 0) {
       setShowFinalConfirm(true);
     }
   };
 
+  /**
+   * Handles the final confirmation of warehouse removal
+   * Removes selected warehouses and resets related states
+   */
   const handleFinalConfirm = async () => {
     try {
       // Remove each selected warehouse
@@ -325,6 +417,10 @@ export default function Home() {
     }
   };
 
+  /**
+   * Deletes a specific section from a warehouse
+   * @param {string} sectionId - The section identifier (warehouse letter + section number)
+   */
   const handleDeleteSection = async (sectionId: string) => {
     const warehouseLetter = sectionId.charAt(0);
     const sectionNumber = parseInt(sectionId.slice(1));
@@ -340,6 +436,10 @@ export default function Home() {
     setShowUndoNotification(true);
   };
 
+  /**
+   * Handles the undo action for deleted items
+   * Restores either a section or a row based on the last deleted item
+   */
   const handleUndo = async () => {
     if (!lastDeletedItem) return;
 

@@ -1,5 +1,12 @@
+/**
+ * WarehouseDashboard Component
+ * This component provides a comprehensive dashboard view of warehouse utilization statistics.
+ * It displays current utilization, historical trends, and status breakdowns.
+ */
+
 'use client';
 
+// Import necessary dependencies
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WarehouseStatus } from "@/types/database";
@@ -7,6 +14,15 @@ import { TimeFilter } from "../filters/TimeFilter";
 import { LineChart } from "../charts/LineChart";
 import { cn } from "@/lib/utils";
 
+/**
+ * Interface for warehouse utilization statistics
+ * @interface UtilizationStats
+ * @property {number} totalSections - Total number of sections in the warehouse
+ * @property {number} occupiedSections - Number of currently occupied sections
+ * @property {number} availableSections - Number of available sections
+ * @property {Object} statusBreakdown - Breakdown of sections by status
+ * @property {Array} historicalData - Historical utilization data points
+ */
 interface UtilizationStats {
   totalSections: number;
   occupiedSections: number;
@@ -20,12 +36,27 @@ interface UtilizationStats {
   }[];
 }
 
+/**
+ * Interface for warehouse information
+ * @interface Warehouse
+ * @property {string} letter - Warehouse identifier
+ * @property {string} name - Warehouse name
+ * @property {string} type - Warehouse type (all/indoor/outdoor)
+ */
 interface Warehouse {
   letter: string;
   name: string;
   type: 'all' | 'indoor' | 'outdoor';
 }
 
+/**
+ * Props interface for the WarehouseDashboard component
+ * @interface WarehouseDashboardProps
+ * @property {UtilizationStats} stats - Warehouse utilization statistics
+ * @property {string} [currentWarehouse] - Currently selected warehouse
+ * @property {boolean} [colorBlindMode] - Whether to use color-blind friendly colors
+ * @property {Function} [onTimeRangeChange] - Callback for time range changes
+ */
 interface WarehouseDashboardProps {
   stats: UtilizationStats;
   currentWarehouse?: string;
@@ -33,6 +64,12 @@ interface WarehouseDashboardProps {
   onTimeRangeChange?: (range: "week" | "month" | "year" | "custom", startDate?: Date, endDate?: Date) => void;
 }
 
+/**
+ * Custom progress bar component
+ * @param {Object} props - Component props
+ * @param {number} props.value - Current progress value (0-100)
+ * @param {boolean} [props.colorBlindMode] - Whether to use color-blind friendly colors
+ */
 const CustomProgress = ({ value, colorBlindMode }: { value: number; colorBlindMode?: boolean }) => {
   return (
     <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -47,21 +84,38 @@ const CustomProgress = ({ value, colorBlindMode }: { value: number; colorBlindMo
   );
 };
 
+/**
+ * WarehouseDashboard Component
+ * 
+ * @param {WarehouseDashboardProps} props - Component props
+ * @returns {JSX.Element} A dashboard displaying warehouse utilization metrics
+ * 
+ * This component:
+ * 1. Shows current warehouse view and time range
+ * 2. Displays key metrics (total sections, utilization, available sections)
+ * 3. Renders a historical utilization chart
+ * 4. Provides a status breakdown of warehouse sections
+ */
 export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
   stats,
   currentWarehouse,
   colorBlindMode = false,
   onTimeRangeChange,
 }) => {
-  const [timeRange, setTimeRange] = useState<"day" | "week" | "month" | "year" | "custom">("day");
+  // State management
+  const [timeRange, setTimeRange] = useState<"week" | "month" | "year" | "custom">("week");
   const [historicalData, setHistoricalData] = useState<{ date: string; utilization: number }[]>([]);
 
+  // Calculate utilization metrics
   const utilizationPercentage = stats.totalSections > 0
     ? (stats.occupiedSections / stats.totalSections) * 100
     : 0;
 
   const utilizationText = `${stats.occupiedSections} of ${stats.totalSections} sections utilized`;
 
+  /**
+   * Effect hook to update historical data when stats change
+   */
   useEffect(() => {
     if (stats.historicalData) {
       console.log("Updating historical data in dashboard:", stats.historicalData);
@@ -69,8 +123,14 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
     }
   }, [stats.historicalData]);
 
+  /**
+   * Handles time range changes and updates the dashboard
+   * @param {string} range - The selected time range
+   * @param {Date} [startDate] - Custom range start date
+   * @param {Date} [endDate] - Custom range end date
+   */
   const handleTimeRangeChange = (
-    range: "day" | "week" | "month" | "year" | "custom",
+    range: "week" | "month" | "year" | "custom",
     startDate?: Date,
     endDate?: Date
   ) => {
@@ -81,6 +141,11 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
     }
   };
 
+  /**
+   * Determines the color for status indicators based on color blind mode
+   * @param {string} status - The section status
+   * @returns {string} The appropriate color code
+   */
   const getStatusColor = (status: string) => {
     if (colorBlindMode) {
       return status === 'green' ? '#2563eb' : '#dc2626'; // Blue for occupied, Red for available
@@ -90,11 +155,13 @@ export const WarehouseDashboard: React.FC<WarehouseDashboardProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Dashboard Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Utilization Dashboard</h2>
         <TimeFilter onRangeChange={handleTimeRangeChange} />
       </div>
 
+      {/* Key Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Current View Card */}
         <Card>
